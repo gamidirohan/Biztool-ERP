@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { BurgerMenu } from "@/components/ui/burger-menu";
+import { AppHeader } from "@/components/ui/app-header";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,8 +22,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
-      <div className="absolute top-0 left-0 w-full flex justify-end p-4">
-        <ModeToggle />
+      <div className="absolute top-0 left-0 w-full">
+        <AppHeader />
       </div>
       <div className="w-full max-w-md">
         {/* Header */}
@@ -159,7 +161,7 @@ export default function LoginPage() {
             {/* Sign Up Link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link href="/register" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium">
                   Sign up for free
                 </Link>

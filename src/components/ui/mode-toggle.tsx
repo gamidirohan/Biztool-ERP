@@ -40,10 +40,28 @@ function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export function ModeToggle() {
   const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
-  // Only toggle between light and dark on button click
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  // Determine if current theme is light, dark, or system (and what system resolves to)
+  let effectiveTheme = theme;
+  if (theme === "system") {
+    if (typeof window !== "undefined") {
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } else {
+      effectiveTheme = "light"; // fallback for SSR
+    }
+  }
+
   const handleToggle = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    setTheme(effectiveTheme === "dark" ? "light" : "dark");
   };
 
   return (
@@ -53,9 +71,8 @@ export function ModeToggle() {
       aria-label="Toggle theme"
       onClick={handleToggle}
     >
-      <SunIcon className={`h-5 w-5 transition-all text-yellow-500 ${theme === 'dark' ? 'scale-0 rotate-90' : 'scale-100 rotate-0'}`} />
-      <MoonIcon className={`absolute h-5 w-5 transition-all text-gray-900 dark:text-yellow-400 ${theme === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'}`} />
-      <span className="sr-only">Toggle theme</span>
+      <SunIcon className={`h-5 w-5 transition-all text-yellow-500 ${effectiveTheme === 'dark' ? 'scale-0 rotate-90' : 'scale-100 rotate-0'}`} />
+      <MoonIcon className={`absolute h-5 w-5 transition-all text-gray-900 dark:text-yellow-400 ${effectiveTheme === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'}`} />
     </Button>
   );
 }

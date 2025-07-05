@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { HoverEffect } from "@/components/ui/card-hover-effect";
 import { 
   Building2, 
   Store, 
@@ -11,9 +10,7 @@ import {
   Smartphone,
   Zap
 } from "lucide-react";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import React from "react";
-import { BurgerMenu } from "@/components/ui/burger-menu";
 
 export default function Home() {
   const modules = [
