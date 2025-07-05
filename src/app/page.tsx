@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { 
-  Building2, 
-  Store, 
-  Clock, 
-  Users, 
-  TrendingUp, 
+import {
+  Building2,
+  Store,
+  Clock,
+  Users,
+  TrendingUp,
   Shield,
   Smartphone,
   Zap

@@ -5,8 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { BurgerMenu } from "@/components/ui/burger-menu";
 import { AppHeader } from "@/components/ui/app-header";
 
 export default function LoginPage() {
