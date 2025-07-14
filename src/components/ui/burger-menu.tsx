@@ -30,8 +30,6 @@ export function BurgerMenu({ children }: { children: React.ReactNode }) {
             <div className="flex-1 flex flex-col gap-4">
               {children}
             </div>
-              {children}
-            </div>
           </div>
         </div>
       )}
