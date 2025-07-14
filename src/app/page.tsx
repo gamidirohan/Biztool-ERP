@@ -1,5 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import {
   Building2,
   Store,
@@ -13,57 +18,80 @@ import {
 import React from "react";
 
 export default function Home() {
-  const modules = [
-    {
-      title: "Manager",
-      description: "Comprehensive business management dashboard with real-time analytics and reporting tools.",
-      icon: <Building2 className="h-10 w-10 text-blue-500" />,
-      href: "/manager"
-    },
-    {
-      title: "Store Module",
-      description: "Complete inventory management, sales tracking, and customer relationship tools.",
-      icon: <Store className="h-10 w-10 text-green-500" />,
-      href: "/store"
-    },
-    {
-      title: "Attendance Module",
-      description: "Employee time tracking, leave management, and attendance analytics.",
-      icon: <Clock className="h-10 w-10 text-purple-500" />,
-      href: "/attendance"
-    },
-    {
-      title: "HR Module",
-      description: "Human resources management, payroll, recruitment, and employee development.",
-      icon: <Users className="h-10 w-10 text-orange-500" />,
-      href: "/hr"
-    }
-  ];
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
 
-  const features = [
-    {
-      icon: <Smartphone className="h-6 w-6 text-blue-500" />,
-      title: "Mobile First Design",
-      description: "Optimized for mobile devices with responsive design"
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6 text-green-500" />,
-      title: "Growth Focused",
-      description: "Built to scale with your business needs"
-    },
-    {
-      icon: <Shield className="h-6 w-6 text-purple-500" />,
-      title: "Secure & Reliable",
-      description: "Enterprise-grade security and data protection"
-    },
-    {
-      icon: <Zap className="h-6 w-6 text-yellow-500" />,
-      title: "Lightning Fast",
-      description: "Optimized performance for quick operations"
-    }
-  ];
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+      setLoading(false);
+    };
+    
+    checkAuth();
+  }, [supabase]);
 
-  return (
+  const handleStartNow = () => {
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+};
+
+const modules = [
+  {
+    title: "Manager",
+    description: "Comprehensive business management dashboard with real-time analytics and reporting tools.",
+    icon: <Building2 className="h-10 w-10 text-blue-500" />,
+    href: "/manager"
+  },
+  {
+    title: "Store Module",
+    description: "Complete inventory management, sales tracking, and customer relationship tools.",
+    icon: <Store className="h-10 w-10 text-green-500" />,
+    href: "/store"
+  },
+  {
+    title: "Attendance Module",
+    description: "Employee time tracking, leave management, and attendance analytics.",
+    icon: <Clock className="h-10 w-10 text-purple-500" />,
+    href: "/attendance"
+  },
+  {
+    title: "HR Module",
+    description: "Human resources management, payroll, recruitment, and employee development.",
+    icon: <Users className="h-10 w-10 text-orange-500" />,
+    href: "/hr"
+  }
+];
+
+const features = [
+  {
+    icon: <Smartphone className="h-6 w-6 text-blue-500" />,
+    title: "Mobile First Design",
+    description: "Optimized for mobile devices with responsive design"
+  },
+  {
+    icon: <TrendingUp className="h-6 w-6 text-green-500" />,
+    title: "Growth Focused",
+    description: "Built to scale with your business needs"
+  },
+  {
+    icon: <Shield className="h-6 w-6 text-purple-500" />,
+    title: "Secure & Reliable",
+    description: "Enterprise-grade security and data protection"
+  },
+  {
+    icon: <Zap className="h-6 w-6 text-yellow-500" />,
+    title: "Lightning Fast",
+    description: "Optimized performance for quick operations"
+  }
+];
+
+return (
     <>
       <main className="px-4 py-10 sm:px-6 lg:px-8 bg-[color:var(--background)] min-h-[calc(100vh-56px)]">
         <div className="max-w-2xl mx-auto text-center">
@@ -73,9 +101,14 @@ export default function Home() {
           </h1>
           <p className="text-base sm:text-lg text-gray-500 mb-8" style={{fontFamily:'var(--font-sans)'}}>Mobile-first ERP & CRM for MSMEs. Simple, efficient, and affordable.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-            <Link href="/login">
-              <Button className="bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white font-semibold px-6 py-3 rounded-lg shadow" style={{fontFamily:'var(--font-sans)'}}>Start Now</Button>
-            </Link>
+            <Button 
+              onClick={handleStartNow}
+              disabled={loading}
+              className="bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white font-semibold px-6 py-3 rounded-lg shadow" 
+              style={{fontFamily:'var(--font-sans)'}}
+            >
+              {loading ? "Loading..." : isLoggedIn ? "Go to Dashboard" : "Start Now"}
+            </Button>
           </div>
         </div>
         {/* Features */}
