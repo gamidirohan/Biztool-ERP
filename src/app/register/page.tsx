@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { AppHeader } from "@/components/ui/app-header";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -25,16 +25,24 @@ export default function RegisterPage() {
       setError("Passwords do not match");
       return;
     }
-    const { error } = await authClient.signUp.email({
-      name,
+    
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name: name,
+        }
+      }
     });
+    
     if (error) {
       setError(error.message || "Registration failed");
       return;
     }
-    router.push("/login");
+    
+    router.push("/login?message=Check your email to confirm your account");
   };
 
   return (

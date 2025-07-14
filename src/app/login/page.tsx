@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { AppHeader } from "@/components/ui/app-header";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -17,7 +17,9 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await authClient.signIn.email({
+    const supabase = createClient();
+    
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -28,7 +30,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push("/dashboard");
   };
 
   return (

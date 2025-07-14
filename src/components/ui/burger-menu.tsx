@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 
-export function BurgerMenu({ children }: { children?: React.ReactNode }) {
+export function BurgerMenu({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,6 +28,8 @@ export function BurgerMenu({ children }: { children?: React.ReactNode }) {
               </button>
             </div>
             <div className="flex-1 flex flex-col gap-4">
+              {children}
+            </div>
               {children}
             </div>
           </div>
