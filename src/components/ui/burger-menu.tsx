@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 
-export function BurgerMenu({ children }: { children: React.ReactNode }) {
+export function BurgerMenu({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
