@@ -94,7 +94,7 @@ export function NavigationMenu({ isOpen, onClose, currentPath }: NavigationMenuP
                 <button
                   key={item.href}
                   onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
                     currentPath === item.href
                       ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-inner"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"

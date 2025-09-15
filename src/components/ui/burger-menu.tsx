@@ -1,38 +1,118 @@
+// burger-menu.tsx
 "use client";
-import React, { useState } from "react";
-import { Menu, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
-export function BurgerMenu({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+interface BurgerMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  return (
-    <>
-      <button
-        className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700"
-        aria-label="Open menu"
-        onClick={() => setOpen(true)}
-      >
-        <Menu className="h-6 w-6 text-[color:var(--foreground)]" />
-      </button>
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-end">
-          <div className="w-72 max-w-full h-full bg-[color:var(--background)] shadow-lg p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <span className="font-bold text-lg tracking-tight text-[color:var(--foreground)]" style={{fontFamily:'var(--font-sans)'}}>Menu</span>
-              <button
-                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
-                aria-label="Close menu"
-                onClick={() => setOpen(false)}
-              >
-                <X className="h-6 w-6 text-[color:var(--foreground)]" />
-              </button>
-            </div>
-            <div className="flex-1 flex flex-col gap-4">
-              {children}
-            </div>
-          </div>
+export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
+  const [user, setUser] = useState<User | null>(null); // Updated type to match Supabase user object
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    fetchUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex">
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        aria-hidden="true"
+      ></div>
+
+      {/* Menu */}
+      <div className="relative w-80 bg-[color:var(--background)] shadow-2xl rounded-r-2xl border-r border-[color:var(--card-border)] p-4">
+        <div className="flex items-center justify-between p-4 border-b border-[color:var(--card-border)]">
+          <Image
+            src="/BizTool Logo.png"
+            alt="BizTool Logo"
+            width={250}
+            height={80} 
+            className="h-[80px] w-[250px]"
+          />
+          <button
+            onClick={onClose}
+            className="text-[color:var(--foreground)] hover:text-[color:var(--muted)] focus:outline-none"
+            aria-label="Close menu"
+          >
+            <X className="h-6 w-6" />
+          </button>
         </div>
-      )}
-    </>
+
+        {/* Navigation Items */}
+        <nav className="space-y-4 mt-4">
+          <a href="/dashboard" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Dashboard</a>
+          <a href="/manager" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Manager</a>
+          <a href="/store" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Store</a>
+          <a href="/attendance" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Attendance</a>
+          <a href="/hr" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">HR</a>
+        </nav>
+
+        {/* Footer */}
+        <div className="mt-4 border-t border-[color:var(--card-border)] pt-4 flex flex-col items-center space-y-4">
+          <div className="self-start">
+            <ModeToggle />
+          </div>
+          {user ? (
+            <Button
+              variant="outline"
+              className="w-full text-center hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)]"
+              onClick={handleSignOut}
+            >Sign Out</Button>
+          ) : (
+            <a href="/login" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full text-center hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)]"
+              >Sign In</Button>
+            </a>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }

@@ -93,20 +93,19 @@ const features = [
 
 return (
     <>
-      <main className="px-4 py-10 sm:px-6 lg:px-8 bg-[color:var(--background)] min-h-[calc(100vh-56px)]">
+      <main className="px-4 py-10 sm:px-6 lg:px-8 bg-[color:var(--background)] text-[color:var(--foreground)] min-h-[calc(100vh-56px)]">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-[color:var(--foreground)]" style={{fontFamily:'var(--font-sans)'}}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6" style={{fontFamily:'var(--font-sans)'}}>
             All your business on
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--accent)]"> one platform.</span>
           </h1>
-          <p className="text-base sm:text-lg text-gray-500 mb-8" style={{fontFamily:'var(--font-sans)'}}>Mobile-first ERP & CRM for MSMEs. Simple, efficient, and affordable.</p>
+          <p className="text-base sm:text-lg mb-8" style={{fontFamily:'var(--font-sans)'}}>Mobile-first ERP & CRM for MSMEs. Simple, efficient, and affordable.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
             <Button 
               onClick={handleStartNow}
               disabled={loading}
-              className="bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white font-semibold px-6 py-3 rounded-lg shadow" 
-              style={{fontFamily:'var(--font-sans)'}}
-            >
+              className="bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white font-semibold px-6 py-3 rounded-lg shadow cursor-pointer" 
+              style={{fontFamily:'var(--font-sans)'}}>
               {loading ? "Loading..." : isLoggedIn ? "Go to Dashboard" : "Start Now"}
             </Button>
           </div>
@@ -116,18 +115,17 @@ return (
           {features.map((feature, i) => (
             <div
               key={i}
-              className="rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow"
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
+              className="rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow text-[color:var(--foreground)]"
+              style={{ fontFamily: 'var(--font-sans)' }}>
               <div className="flex items-center gap-3 p-5 min-h-[96px]">
                 <span className="flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[color:var(--muted)]">
-                  {React.cloneElement(feature.icon, { className: "h-5 w-5 sm:h-6 sm:w-6" })}
+                  {React.cloneElement(feature.icon, { className: "h-5 w-5 sm:h-6 sm:w-6 text-[color:var(--primary)]" })}
                 </span>
                 <div>
                   <div className="font-semibold text-[color:var(--foreground)] text-base sm:text-lg leading-tight">
                     {feature.title}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-500 leading-snug">
+                  <div className="text-xs sm:text-sm">
                     {feature.description}
                   </div>
                 </div>
@@ -138,12 +136,12 @@ return (
         {/* Modules */}
         <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6">
           {modules.map((mod, i) => (
-            <Link href={mod.href} key={i} className="block rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow p-6 transition hover:shadow-lg" style={{fontFamily:'var(--font-sans)'}}>
+            <Link href={mod.href} key={i} className="block rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow p-6 transition hover:shadow-lg text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)]" style={{fontFamily:'var(--font-sans)'}}>
               <div className="flex items-center gap-4 mb-2">
                 {mod.icon}
                 <div className="font-semibold text-[color:var(--foreground)]">{mod.title}</div>
               </div>
-              <div className="text-sm text-gray-500">{mod.description}</div>
+              <div className="text-sm">{mod.description}</div>
             </Link>
           ))}
         </div>
