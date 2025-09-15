@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Building2, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -142,7 +142,7 @@ export default function LoginPage() {
               </Button>
             </form>
             <div className="text-center text-xs text-[color:var(--foreground)]/60">
-              <span>Don't have an account? </span>
+              <span>Don&apos;t have an account? </span>
               <Link href="/register" className="font-medium text-[color:var(--primary)] hover:text-[color:var(--primary-hover)] transition">Create one</Link>
             </div>
             <div className="border-t border-[color:var(--card-border)] pt-4 text-center">

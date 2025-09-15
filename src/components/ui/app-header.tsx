@@ -6,8 +6,7 @@ import { Button } from "./button";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { NavigationMenu } from "@/components/ui/navigation-menu";
-import { Menu, Home, X } from "lucide-react"; 
+import { Menu, Home } from "lucide-react"; 
 import { BurgerMenu } from "@/components/ui/burger-menu";
 
 export function AppHeader() {
