@@ -10,6 +10,7 @@ interface InviteMeta {
   tenantId: string;
   expiresAt: string;
   status: 'pending' | 'accepted' | 'expired' | 'canceled';
+  tenantName?: string;
 }
 
 async function getInvite(token: string): Promise<InviteMeta | null> {
@@ -62,14 +63,17 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       <div className="w-full max-w-md space-y-6 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)]/80 backdrop-blur p-6">
         <div className="space-y-2">
           <h1 className="text-xl font-semibold">You are invited</h1>
-          <p className="text-sm text-[color:var(--foreground)]/70">Email <span className="font-medium">{invite.email}</span> invited as <span className="font-medium">{invite.role}</span>.</p>
+          <p className="text-sm text-[color:var(--foreground)]/70">
+            Email <span className="font-medium">{invite.email}</span> invited as <span className="font-medium">{invite.role}</span>
+            {invite.tenantName ? <> to <span className="font-medium">{invite.tenantName}</span></> : null}.
+          </p>
         </div>
         {!user && (
           <div className="space-y-3 text-sm">
             <p>To continue, sign in (or sign up) using the invited email.</p>
             <div className="flex gap-3">
               <Link href={`/login?next=/invite/${token}`} className="flex-1 text-center rounded-md px-4 py-2 bg-[color:var(--primary)] text-white text-sm font-medium">Sign in</Link>
-              <Link href={`/register?next=/invite/${token}&prefillEmail=${encodeURIComponent(invite.email)}`} className="flex-1 text-center rounded-md px-4 py-2 border border-[color:var(--card-border)] text-[color:var(--foreground)] text-sm font-medium">Sign up</Link>
+              <Link href={`/register?token=${token}&prefillEmail=${encodeURIComponent(invite.email)}&next=/invite/${token}`} className="flex-1 text-center rounded-md px-4 py-2 border border-[color:var(--card-border)] text-[color:var(--foreground)] text-sm font-medium">Sign up</Link>
             </div>
           </div>
         )}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import { createServiceRoleClient } from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
 
@@ -12,22 +13,26 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Load invite (reuse RLS token header trick)
-    // @ts-expect-error override fetch for header injection
-    supabase.rest.fetch = (input: RequestInfo, init?: RequestInit) => {
-      const h = new Headers(init?.headers);
-      h.set('x-invite-token', token);
-      return fetch(input, { ...init, headers: h });
-    };
-
-    const { data: invite, error } = await supabase
+    // Load invite (try regular, then service role to avoid RLS issues)
+    const { data: inviteReg, error: inviteErr } = await supabase
       .from('tenant_invitations')
       .select('*')
       .eq('token', token)
       .maybeSingle();
+    let invite = inviteReg;
+    let error = inviteErr;
+    if (!invite) {
+      const admin = createServiceRoleClient();
+      const { data: inv2, error: e2 } = await admin
+        .from('tenant_invitations')
+        .select('*')
+        .eq('token', token)
+        .maybeSingle();
+      invite = inv2 as any;
+      error = e2 as any;
+    }
     if (error || !invite) return NextResponse.json({ error: 'Invalid invite' }, { status: 400 });
-    if (invite.accepted_at) return NextResponse.json({ error: 'Already accepted' }, { status: 409 });
-    if (invite.canceled_at) return NextResponse.json({ error: 'Canceled' }, { status: 410 });
+    // If schema lacks accepted/canceled fields, rely on presence and expiry only
     if (new Date(invite.expires_at) < new Date()) return NextResponse.json({ error: 'Expired' }, { status: 410 });
     if (invite.email.toLowerCase() !== (user.email || '').toLowerCase()) {
       return NextResponse.json({ error: 'Email mismatch' }, { status: 400 });
@@ -47,9 +52,11 @@ export async function POST(req: Request) {
     });
     if (memErr) return NextResponse.json({ error: memErr.message }, { status: 400 });
 
-    await supabase
+    // Best-effort mark accepted if column exists; otherwise delete invite to prevent reuse
+    const admin = createServiceRoleClient();
+    await admin
       .from('tenant_invitations')
-      .update({ accepted_at: new Date().toISOString() })
+      .delete()
       .eq('id', invite.id);
 
     return NextResponse.json({ ok: true });

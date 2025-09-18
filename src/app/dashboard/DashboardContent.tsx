@@ -78,11 +78,45 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
       const res = await fetch('/api/invitations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: inviteRole, tenantId: profile.tenant_id }) });
       if (!res.ok) {
         const data = await res.json().catch(()=>({}));
-        setInviteError(data.error || 'Failed');
+        let msg = data?.error || 'Failed';
+        if (res.status === 403 && data?.code) {
+          switch (data.code) {
+            case 'insufficient_role':
+              msg = 'You do not have permission to invite users. Only owner, admin, or manager can invite.';
+              break;
+            case 'tenant_mismatch':
+              msg = 'Your current tenant context does not match the selected tenant. Please switch tenant or refresh your session.';
+              break;
+            case 'no_membership_for_tenant':
+              msg = 'Could not find your membership for this tenant. Contact an admin to ensure your access.';
+              break;
+            case 'membership_check_failed':
+              msg = 'Membership check failed. Please try again.';
+              break;
+            case 'profile_check_failed':
+              msg = 'Profile check failed. Please try again or refresh your session.';
+              break;
+            case 'no_profile':
+              msg = 'No profile found. Please complete tenant setup or contact admin.';
+              break;
+          }
+        }
+        setInviteError(msg);
       } else {
-        setInviteEmail('');
-        setShowInvite(false);
-        // refresh invites
+        const successData = await res.json().catch(()=>({}));
+        console.log('[invite] Success response:', successData);
+        
+        // Show appropriate success/warning message
+        if (successData.emailed === false) {
+          const reason = successData.emailError || 'Email service not configured';
+          setInviteError(`✓ Invite created! But email failed (${reason}). Share this link manually: ${successData.inviteUrl || '(check logs)'}`);
+        } else {
+          // Clear form and close modal on full success
+          setInviteEmail('');
+          setShowInvite(false);
+        }
+        
+        // refresh invites regardless
         const supabase = createClient();
         const { data } = await supabase
           .from('tenant_invitations')

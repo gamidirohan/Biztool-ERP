@@ -7,6 +7,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import React, { useEffect } from "react";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,10 +19,36 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  // Invite-aware state
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [inviteEmailLocked, setInviteEmailLocked] = useState(false);
+  const [inviteMeta, setInviteMeta] = useState<{ tenantName?: string; role?: string } | null>(null);
+
+  // On mount, read search params for token/prefillEmail
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get('token');
+    const prefill = url.searchParams.get('prefillEmail');
+    if (token) {
+      setInviteToken(token);
+      if (prefill) {
+        setEmail(prefill);
+        setInviteEmailLocked(true);
+      }
+      // Fetch invite meta for banner
+      fetch(`/api/invitations/${token}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setInviteMeta(data ? { tenantName: data.tenantName, role: data.role } : null))
+        .catch(() => {});
+    }
+  }, []);
+        const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+          if (submitting) return; // guard against double submit
+          setSubmitting(true);
     // Normalize inputs
     const trimmedCompany = companyName.trim();
     const trimmedSub = subdomain.trim();
@@ -33,21 +60,23 @@ export default function RegisterPage() {
       return;
     }
 
-    // Basic subdomain validation (true 2-30 length): start & end alphanumeric, hyphens allowed inside, all lowercase.
-    // Previous pattern accidentally enforced minimum length of 3.
-    const subdomainPattern = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$/; // length 2-30
-    const reserved = new Set(["admin","api","app","www","root","support","help","billing"]);
-    if (!subdomainPattern.test(trimmedSub)) {
-      setError("Invalid subdomain. Use 2-30 lowercase letters, numbers or hyphens (no leading/trailing hyphen).");
-      return;
-    }
-    if (reserved.has(trimmedSub)) {
-      setError("That subdomain is reserved. Please choose another.");
-      return;
-    }
-    if (!trimmedCompany) {
-      setError("Company name required");
-      return;
+    // Tenant fields validation only when NOT joining via invite
+    if (!inviteToken) {
+      // Basic subdomain validation (true 2-30 length): start & end alphanumeric, hyphens allowed inside, all lowercase.
+      const subdomainPattern = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$/; // length 2-30
+      const reserved = new Set(["admin","api","app","www","root","support","help","billing"]);
+      if (!subdomainPattern.test(trimmedSub)) {
+        setError("Invalid subdomain. Use 2-30 lowercase letters, numbers or hyphens (no leading/trailing hyphen).");
+        return;
+      }
+      if (reserved.has(trimmedSub)) {
+        setError("That subdomain is reserved. Please choose another.");
+        return;
+      }
+      if (!trimmedCompany) {
+        setError("Company name required");
+        return;
+      }
     }
 
     // Email validation (Supabase also validates server-side; this gives quicker feedback)
@@ -78,6 +107,7 @@ export default function RegisterPage() {
       let friendly = raw;
       if (/invalid email/i.test(raw)) friendly = 'Email address appears invalid.';
       if (/already registered|user already exists/i.test(raw)) friendly = 'An account with this email already exists.';
+      if (/for security purposes/i.test(raw)) friendly = raw; // Supabase throttle: ask user to wait indicated seconds
       if (/rate limit/i.test(raw)) friendly = 'Too many attempts. Please wait a moment.';
       setError(friendly);
       if (process.env.NODE_ENV !== 'production') {
@@ -86,18 +116,39 @@ export default function RegisterPage() {
       return;
     }
     const user = signUpData.user;
+    const session = (signUpData as any).session;
 
     // If email confirmation required, user may be null; inform user to confirm first.
-    if (!user) {
-      router.push("/login?message=Confirm+email+then+sign+in+to+finish+tenant+setup");
+    if (!user || !session) {
+      // Email confirmation is required; send user to login and return to invite to accept afterwards
+      const next = inviteToken ? `/invite/${inviteToken}` : '/dashboard';
+      const msg = inviteToken
+        ? 'Check your email to confirm, then sign in to join your team.'
+        : 'Check your email to confirm, then sign in to finish tenant setup.';
+      router.push(`/login?message=${encodeURIComponent(msg)}&next=${encodeURIComponent(next)}`);
       return;
     }
 
-    // Parse name into first / last (simple split)
-  const firstName = trimmedName.split(" ")[0] || trimmedName;
-  const lastName = trimmedName.split(" ").slice(1).join(" ") || null;
+    // If invited, accept invitation instead of creating a tenant
+    if (inviteToken) {
+      const res = await fetch('/api/invitations/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: inviteToken })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Failed to accept invitation');
+        return;
+      }
+      // Go to dashboard for the joined tenant
+      router.push('/dashboard');
+      return;
+    }
 
-    // Call secure bootstrap function (handles tenant, membership, profile, core modules)
+    // Regular owner signup flow (no invite): create tenant
+    const firstName = trimmedName.split(" ")[0] || trimmedName;
+    const lastName = trimmedName.split(" ").slice(1).join(" ") || null;
     const { data: rpcData, error: rpcError } = await supabase.rpc('bootstrap_tenant_owner', {
       p_company_name: trimmedCompany,
       p_subdomain: trimmedSub,
@@ -105,18 +156,11 @@ export default function RegisterPage() {
       p_first_name: firstName,
       p_last_name: lastName
     });
-
-    if (rpcError) {
-      setError("Failed to bootstrap tenant: " + rpcError.message);
+    if (rpcError || !rpcData) {
+      setError("Failed to bootstrap tenant: " + (rpcError?.message || 'Unknown'));
       return;
     }
-
-    if (!rpcData) {
-      setError("Unexpected error: tenant not created.");
-      return;
-    }
-
-    router.push("/dashboard");
+    router.push('/dashboard');
   };
 
   return (
@@ -153,11 +197,16 @@ export default function RegisterPage() {
             <Link href="/" className="md:hidden inline-flex items-center justify-center space-x-2 mb-4 text-[color:var(--primary)] hover:opacity-90 transition">
               <span className="text-xl font-semibold">BizTool</span>
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight">Create your tenant</h1>
-            <p className="text-sm text-[color:var(--foreground)]/60">Sign up as the owner. Employees will be invited later.</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{inviteToken ? 'Join your team' : 'Create your tenant'}</h1>
+            <p className="text-sm text-[color:var(--foreground)]/60">
+              {inviteToken
+                ? <>You’re joining as {inviteMeta?.role || 'employee'}{inviteMeta?.tenantName ? <> at <span className="font-medium">{inviteMeta.tenantName}</span></> : null}.</>
+                : 'Sign up as the owner. Employees will be invited later.'}
+            </p>
           </div>
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] shadow-sm p-6 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--card-bg)]/90 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-5">
+              {!inviteToken && (
               <div className="space-y-2">
                 <label htmlFor="companyName" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
                   Company / Tenant Name
@@ -174,6 +223,8 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+              )}
+              {!inviteToken && (
               <div className="space-y-2">
                 <label htmlFor="subdomain" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
                   Subdomain
@@ -191,6 +242,7 @@ export default function RegisterPage() {
                   <span className="ml-2 self-center text-xs text-[color:var(--foreground)]/60">.yourdomain.com</span>
                 </div>
               </div>
+              )}
               <div className="space-y-2">
                 <label htmlFor="name" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
                   Name
@@ -221,6 +273,8 @@ export default function RegisterPage() {
                     className="w-full rounded-md border border-[color:var(--card-border)] bg-[color:var(--background)]/60 dark:bg-[color:var(--background)]/80 pl-10 pr-4 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--foreground)]/35 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 focus:border-[color:var(--primary)] transition"
                     placeholder="you@company.com"
                     required
+                    readOnly={inviteEmailLocked}
+                    aria-readonly={inviteEmailLocked}
                   />
                 </div>
               </div>
@@ -260,7 +314,7 @@ export default function RegisterPage() {
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-md border border-[color:var(--card-border)] bg-[color:var(--background)]/60 dark:bg-[color:var(--background)]/80 pl-10 pr-12 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--foreground)]/35 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 focus:border-[color:var(--primary)] transition"
+                    className="w-full rounded-md border border-[color:var(--card-border)] bg-[color:var(--background)]/60 dark:bg-[color:var(--background)]/80 pl-10 pr-12 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--foreground)]/35 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 focus:border-[color:var,--primary)] transition"
                     placeholder="••••••••"
                     required
                   />
@@ -271,7 +325,7 @@ export default function RegisterPage() {
                 type="submit"
                 className="w-full h-10 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 focus-visible:outline-none transition"
               >
-                Create Tenant
+                {inviteToken ? 'Join Team' : 'Create Tenant'}
               </Button>
             </form>
             <div className="text-center text-xs text-[color:var(--foreground)]/60">
