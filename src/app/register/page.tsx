@@ -10,7 +10,9 @@ import Image from "next/image";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(""); // Person name
+  const [companyName, setCompanyName] = useState("");
+  const [subdomain, setSubdomain] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,28 +22,101 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // Normalize inputs
+    const trimmedCompany = companyName.trim();
+    const trimmedSub = subdomain.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
+    // Basic subdomain validation (true 2-30 length): start & end alphanumeric, hyphens allowed inside, all lowercase.
+    // Previous pattern accidentally enforced minimum length of 3.
+    const subdomainPattern = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$/; // length 2-30
+    const reserved = new Set(["admin","api","app","www","root","support","help","billing"]);
+    if (!subdomainPattern.test(trimmedSub)) {
+      setError("Invalid subdomain. Use 2-30 lowercase letters, numbers or hyphens (no leading/trailing hyphen).");
+      return;
+    }
+    if (reserved.has(trimmedSub)) {
+      setError("That subdomain is reserved. Please choose another.");
+      return;
+    }
+    if (!trimmedCompany) {
+      setError("Company name required");
+      return;
+    }
+
+    // Email validation (Supabase also validates server-side; this gives quicker feedback)
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(normalizedEmail)) {
+      setError(`Invalid email format`);
+      return;
+    }
+    if (normalizedEmail.length > 320) { // practical upper bound
+      setError('Email too long');
+      return;
+    }
     
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
         data: {
-          name: name,
+          name: trimmedName,
         }
       }
     });
     
-    if (error) {
-      setError(error.message || "Registration failed");
+    if (signUpError) {
+      // Provide clearer mapping for common issues
+      const raw = signUpError.message || 'Registration failed';
+      let friendly = raw;
+      if (/invalid email/i.test(raw)) friendly = 'Email address appears invalid.';
+      if (/already registered|user already exists/i.test(raw)) friendly = 'An account with this email already exists.';
+      if (/rate limit/i.test(raw)) friendly = 'Too many attempts. Please wait a moment.';
+      setError(friendly);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[register] signUp error detail:', signUpError);
+      }
       return;
     }
-    
-    router.push("/login?message=Check your email to confirm your account");
+    const user = signUpData.user;
+
+    // If email confirmation required, user may be null; inform user to confirm first.
+    if (!user) {
+      router.push("/login?message=Confirm+email+then+sign+in+to+finish+tenant+setup");
+      return;
+    }
+
+    // Parse name into first / last (simple split)
+  const firstName = trimmedName.split(" ")[0] || trimmedName;
+  const lastName = trimmedName.split(" ").slice(1).join(" ") || null;
+
+    // Call secure bootstrap function (handles tenant, membership, profile, core modules)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('bootstrap_tenant_owner', {
+      p_company_name: trimmedCompany,
+      p_subdomain: trimmedSub,
+      p_user_id: user.id,
+      p_first_name: firstName,
+      p_last_name: lastName
+    });
+
+    if (rpcError) {
+      setError("Failed to bootstrap tenant: " + rpcError.message);
+      return;
+    }
+
+    if (!rpcData) {
+      setError("Unexpected error: tenant not created.");
+      return;
+    }
+
+    router.push("/dashboard");
   };
 
   return (
@@ -78,11 +153,44 @@ export default function RegisterPage() {
             <Link href="/" className="md:hidden inline-flex items-center justify-center space-x-2 mb-4 text-[color:var(--primary)] hover:opacity-90 transition">
               <span className="text-xl font-semibold">BizTool</span>
             </Link>
-            <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
-            <p className="text-sm text-[color:var(--foreground)]/60">Sign up to get started.</p>
+            <h1 className="text-2xl font-semibold tracking-tight">Create your tenant</h1>
+            <p className="text-sm text-[color:var(--foreground)]/60">Sign up as the owner. Employees will be invited later.</p>
           </div>
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] shadow-sm p-6 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--card-bg)]/90 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="companyName" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
+                  Company / Tenant Name
+                </label>
+                <div className="relative">
+                  <input
+                    id="companyName"
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="w-full rounded-md border border-[color:var(--card-border)] bg-[color:var(--background)]/60 dark:bg-[color:var(--background)]/80 px-4 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--foreground)]/35 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 focus:border-[color:var(--primary)] transition"
+                    placeholder="Acme Industries"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="subdomain" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
+                  Subdomain
+                </label>
+                <div className="relative flex">
+                  <input
+                    id="subdomain"
+                    type="text"
+                    value={subdomain}
+                    onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
+                    className="flex-1 rounded-md border border-[color:var(--card-border)] bg-[color:var(--background)]/60 dark:bg-[color:var(--background)]/80 px-4 py-2 text-sm text-[color:var(--foreground)] placeholder:text-[color:var(--foreground)]/35 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 focus:border-[color:var(--primary)] transition"
+                    placeholder="acme"
+                    required
+                  />
+                  <span className="ml-2 self-center text-xs text-[color:var(--foreground)]/60">.yourdomain.com</span>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label htmlFor="name" className="block text-xs font-medium uppercase tracking-wide text-[color:var(--foreground)]/70">
                   Name
@@ -163,7 +271,7 @@ export default function RegisterPage() {
                 type="submit"
                 className="w-full h-10 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 focus-visible:outline-none transition"
               >
-                Sign up
+                Create Tenant
               </Button>
             </form>
             <div className="text-center text-xs text-[color:var(--foreground)]/60">

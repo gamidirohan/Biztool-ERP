@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -34,6 +34,21 @@ export default function LoginPage() {
       return;
     }
 
+    // After auth, fetch profile to ensure not an employee-only login
+    const user = signInData.user;
+    if (user) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (profile?.role === 'employee') {
+        setErrorMsg('Employees must use an invite link or SSO flow (direct login disabled).');
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+    }
     router.push("/dashboard");
   };
 
@@ -142,8 +157,8 @@ export default function LoginPage() {
               </Button>
             </form>
             <div className="text-center text-xs text-[color:var(--foreground)]/60">
-              <span>Don&apos;t have an account? </span>
-              <Link href="/register" className="font-medium text-[color:var(--primary)] hover:text-[color:var(--primary-hover)] transition">Create one</Link>
+              <span>Need a tenant account? </span>
+              <Link href="/register" className="font-medium text-[color:var(--primary)] hover:text-[color:var(--primary-hover)] transition">Create a tenant</Link>
             </div>
             <div className="border-t border-[color:var(--card-border)] pt-4 text-center">
               <p className="text-[10px] text-[color:var(--foreground)]/50 leading-relaxed">

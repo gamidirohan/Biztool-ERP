@@ -9,6 +9,13 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"args": []
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

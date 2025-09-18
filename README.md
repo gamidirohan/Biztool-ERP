@@ -82,3 +82,15 @@ The project is set up for modern React development with:
 ## License
 
 This project is licensed under the MIT License.
+
+## Password reset flow
+
+This app uses Supabase Auth for password resets.
+
+- /forgot-password — Enter email to receive reset link
+- /reset-password — Enter new password after clicking email link
+
+Implementation notes:
+- Forgot page calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + "/reset-password" })`.
+- Supabase recovery link redirects to `/reset-password`; the client session is established and then `auth.updateUser({ password })` is called.
+- If you change the path, update the redirect in `src/app/forgot-password/page.tsx`.
