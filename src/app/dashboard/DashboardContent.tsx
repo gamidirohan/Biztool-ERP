@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Clock, Settings, CreditCard, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MobileDashboard } from "@/components/ui/mobile-dashboard";
 
 interface ModuleDef { id: string; name: string; description: string; iconName: string; status: string; route: string; sortOrder?: number }
 interface PendingInvite { id: string; email: string; role: string; created_at: string; expires_at: string }
@@ -156,8 +157,21 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
 
   const displayName = profile?.first_name ? `${profile.first_name}${profile.last_name ? ` ${profile.last_name}` : ""}` : (user.name || user.email?.split("@")[0] || "User");
 
+  // Mobile view for screens smaller than md (768px)
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <>
+      {/* Mobile Dashboard - visible only on small screens */}
+      <div className="block md:hidden">
+        <MobileDashboard 
+          user={user}
+          profile={profile}
+          effectiveRole={effectiveRole}
+          modules={localModules}
+        />
+      </div>
+
+      {/* Desktop Dashboard - hidden on small screens */}
+      <div className="hidden md:block min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 pb-24">
         {/* Header / Welcome */}
         <section aria-labelledby="dashboard-welcome" className="mb-8">
@@ -351,6 +365,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
