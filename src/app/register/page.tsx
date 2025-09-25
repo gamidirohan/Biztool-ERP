@@ -115,8 +115,8 @@ export default function RegisterPage() {
       }
       return;
     }
-    const user = signUpData.user;
-    const session = (signUpData as any).session;
+  const user = signUpData.user;
+  const session = (signUpData as { session?: unknown }).session as { access_token?: string } | null | undefined;
 
     // If email confirmation required, user may be null; inform user to confirm first.
     if (!user || !session) {

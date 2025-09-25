@@ -45,8 +45,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
               .select('name')
               .eq('id', data.tenant_id)
               .single();
-            // @ts-expect-error augmenting for response
-            data.tenant_name = t?.name ?? null;
+            // attach name for response shaping
+            (data as { tenant_name?: string }).tenant_name = t?.name ?? null;
           } catch {}
         }
       } catch (adminError) {
@@ -74,7 +74,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       email: data.email,
       role: data.role,
       tenantId: data.tenant_id,
-      tenantName: (data as any).tenant_name ?? undefined,
+  tenantName: (data as { tenant_name?: string }).tenant_name ?? undefined,
       expiresAt: data.expires_at,
       status
     });

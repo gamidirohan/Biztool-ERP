@@ -37,7 +37,6 @@ interface MobileDashboardProps {
 }
 
 export function MobileDashboard({ user, profile, effectiveRole, modules = [] }: MobileDashboardProps) {
-  const [showInvite, setShowInvite] = useState(false);
   const [orgStats, setOrgStats] = useState<{
     activeUsers: number;
     pendingInvites: number;

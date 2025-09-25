@@ -19,8 +19,14 @@ export async function POST(req: Request) {
       .select('*')
       .eq('token', token)
       .maybeSingle();
-    let invite = inviteReg;
-    let error = inviteErr;
+    let invite = inviteReg as (null | {
+      id: string;
+      tenant_id: string;
+      email: string;
+      role: string;
+      expires_at: string;
+    });
+    let error = inviteErr as { message?: string } | null;
     if (!invite) {
       const admin = createServiceRoleClient();
       const { data: inv2, error: e2 } = await admin
@@ -28,8 +34,8 @@ export async function POST(req: Request) {
         .select('*')
         .eq('token', token)
         .maybeSingle();
-      invite = inv2 as any;
-      error = e2 as any;
+      invite = inv2 as typeof invite;
+      error = e2 as typeof error;
     }
     if (error || !invite) return NextResponse.json({ error: 'Invalid invite' }, { status: 400 });
     // If schema lacks accepted/canceled fields, rely on presence and expiry only

@@ -5,8 +5,7 @@ import {
   Users, 
   Settings, 
   CreditCard, 
-  Puzzle,
-  LucideIcon
+  Puzzle
 } from "lucide-react";
 
 interface ShortcutItemProps {

@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     
     // Try regular insert first, fallback to service role if RLS blocks
     let insertError = null;
-    let { error } = await supabase.from('tenant_invitations').insert({
+  const { error } = await supabase.from('tenant_invitations').insert({
       tenant_id: tenantId,
       email: normalizedEmail,
       role,
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
     // Send email and get result
     const emailResult = await sendInvitationEmail({ to: normalizedEmail, inviteUrl, role, tenantName: tenantData?.name });
     
-    let emailStatus = { emailed: false, emailError: null as string | null };
+  const emailStatus = { emailed: false, emailError: null as string | null };
     if ('sent' in emailResult && emailResult.sent) {
       emailStatus.emailed = true;
     } else if ('skipped' in emailResult) {
