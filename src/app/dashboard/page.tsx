@@ -47,6 +47,20 @@ export default async function DashboardPage() {
       .select("code,status")
       .eq("tenant_id", profile.tenant_id);
     modules = (data as ModuleRow[] | null) || [];
+
+    // Optional per-user assignment filter: if assignments exist, restrict modules
+    if (user) {
+      const { data: assigns, error: assignErr } = await supabase
+        .from("tenant_user_module_assignments")
+        .select("module_code")
+        .eq("tenant_id", profile.tenant_id)
+        .eq("user_id", user.id);
+      if (!assignErr && assigns && assigns.length > 0) {
+        const allow = new Set<string>(assigns.map((a: any) => a.module_code));
+        modules = modules.filter((m) => allow.has(m.code));
+      }
+      // if table missing or no rows, we keep the full subscribed set
+    }
   }
 
   const merged = mergeDbWithCatalog(modules, effectiveRole);

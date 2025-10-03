@@ -24,6 +24,9 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
   const [orgStats, setOrgStats] = useState<{ activeUsers: number; pendingInvites: number; activeModules: number } | null>(null);
   const [orgStatsLoading, setOrgStatsLoading] = useState(false);
   const privileged = ['owner','manager','admin'].includes(effectiveRole);
+  const [team, setTeam] = useState<Array<{ id: string; name: string; lastAction?: string; lastAt?: string }>>([]);
+  const [myAttendance, setMyAttendance] = useState<{ lastAction?: string; lastAt?: string; thisWeekCount?: number; todayTimeline?: Array<{ time: string; action: string }>; late?: boolean; scheduledStart?: string } | null>(null);
+  const moduleManagers = ['owner','admin'].includes(effectiveRole);
 
   useEffect(() => {
     async function loadInvites() {
@@ -70,6 +73,92 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
     loadStats();
     // Recompute when modules or pendingInvites change
   }, [privileged, profile?.tenant_id, modules, pendingInvites.length]);
+
+  // Load My Team summary for managers/admin/owner
+  useEffect(() => {
+    (async () => {
+      if (!privileged || !profile?.tenant_id) return;
+      const supabase = createClient();
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('id,name')
+        .eq('tenant_id', profile.tenant_id)
+        .order('name', { ascending: true })
+        .limit(20);
+      const list = emps || [];
+      const results: Array<{ id: string; name: string; lastAction?: string; lastAt?: string }> = [];
+      for (const emp of list) {
+        const { data: last } = await supabase
+          .from('attendance_records')
+          .select('action,created_at')
+          .eq('tenant_id', profile.tenant_id)
+          .eq('employee_id', emp.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        results.push({ id: emp.id as string, name: emp.name as string, lastAction: last?.action, lastAt: last?.created_at });
+      }
+      setTeam(results);
+    })();
+  }, [privileged, profile?.tenant_id]);
+
+  // Load employee metrics for non-privileged users
+  useEffect(() => {
+    (async () => {
+      if (privileged || !profile?.tenant_id || !user?.id) return;
+      const supabase = createClient();
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!emp?.id) return;
+      // Last action
+      const { data: last } = await supabase
+        .from('attendance_records')
+        .select('action,created_at')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('employee_id', emp.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      // This week count (approx: last 7 days)
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('attendance_records')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', profile.tenant_id)
+        .eq('employee_id', emp.id)
+        .gte('created_at', since);
+      // Today timeline
+      const startOfDay = new Date();
+      startOfDay.setHours(0,0,0,0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23,59,59,999);
+      const { data: today } = await supabase
+        .from('attendance_records')
+        .select('action,created_at')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('employee_id', emp.id)
+        .gte('created_at', startOfDay.toISOString())
+        .lte('created_at', endOfDay.toISOString())
+        .order('created_at', { ascending: true });
+      const timeline = (today || []).map(r => ({ action: r.action as string, time: new Date(r.created_at as string).toLocaleTimeString() }));
+      // Simple scheduled start and late detection (assume 09:00 local)
+      const scheduledStart = '09:00';
+      let late = false;
+      const firstIn = (today || []).find(r => r.action === 'check_in');
+      if (firstIn?.created_at) {
+        const t = new Date(firstIn.created_at);
+        const sched = new Date();
+        const [hh, mm] = scheduledStart.split(':').map(Number);
+        sched.setHours(hh, mm, 0, 0);
+        late = t.getTime() > sched.getTime() + 1 * 60 * 1000; // >1 minute late
+      }
+      setMyAttendance({ lastAction: last?.action, lastAt: last?.created_at, thisWeekCount: count ?? 0, todayTimeline: timeline, late, scheduledStart });
+    })();
+  }, [privileged, profile?.tenant_id, user?.id]);
 
   const handleInvite = async () => {
     if (!profile?.tenant_id) return;
@@ -134,7 +223,14 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
     }
   };
 
-  useEffect(() => setLocalModules(modules), [modules]);
+  useEffect(() => {
+    // For employees, hide non-subscribed/available modules
+    if (!moduleManagers) {
+      setLocalModules(modules.filter(m => ['subscribed','trial'].includes(m.status)));
+    } else {
+      setLocalModules(modules);
+    }
+  }, [modules, moduleManagers]);
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
 
   const handleSubscribe = useCallback(async (mod: ModuleDef) => {
@@ -170,7 +266,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
         />
       </div>
 
-      {/* Desktop Dashboard - hidden on small screens */}
+  {/* Desktop Dashboard - hidden on small screens */}
       <div className="hidden md:block min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 pb-24">
         {/* Header / Welcome */}
@@ -200,7 +296,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
           </div>
         </section>
 
-        {/* Manager / Admin Widgets */}
+  {/* Manager / Admin Widgets */}
         {privileged && (
           <section aria-labelledby="manager-widgets" className="mb-12">
             <div className="flex items-center justify-between mb-4">
@@ -240,14 +336,58 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Pending Approvals</h3>
                 <p className="text-xs text-[color:var(--foreground)]/60">No approval workflows yet. This area will surface leave requests, expense claims, and other actionable items.</p>
               </div>
-              {/* Quick Links Placeholder */}
+              {/* My Team */}
               <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-6">
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Settings className="h-4 w-4" /> Admin Quick Links</h3>
-                <ul className="space-y-2 text-xs">
-                  <li><button disabled className="w-full text-left px-2 py-1.5 rounded-md border border-dashed border-[color:var(--card-border)]/50 hover:border-[color:var(--card-border)]/80 disabled:opacity-60">User Directory (soon)</button></li>
-                  <li><button onClick={() => document.getElementById('pending-invites')?.scrollIntoView({ behavior: 'smooth' })} className="w-full text-left px-2 py-1.5 rounded-md border border-[color:var(--card-border)]/50 hover:border-[color:var(--card-border)]">Manage Invitations</button></li>
-                  <li><button disabled className="w-full text-left px-2 py-1.5 rounded-md border border-dashed border-[color:var(--card-border)]/50 disabled:opacity-60">Module Billing (soon)</button></li>
-                </ul>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Users className="h-4 w-4" /> My Team</h3>
+                {team.length === 0 && <p className="text-xs text-[color:var(--foreground)]/60">No team members found.</p>}
+                {team.length > 0 && (
+                  <ul className="space-y-2 text-xs max-h-64 overflow-auto">
+                    {team.map((t) => (
+                      <li key={t.id} className="flex items-center justify-between border-b border-[color:var(--card-border)] pb-2 last:border-none last:pb-0">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{t.name}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-[color:var(--foreground)]/50">{t.lastAction ? t.lastAction.replace('_',' ') : '—'}</span>
+                        </div>
+                        <span className="text-[11px] text-[color:var(--foreground)]/50">{t.lastAt ? new Date(t.lastAt).toLocaleString() : ''}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Employee Metrics */}
+        {!privileged && (
+          <section aria-labelledby="employee-metrics" className="mb-12">
+            <h2 id="employee-metrics" className="text-lg font-semibold mb-4">Your Activity</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4">
+                <div className="text-xs text-[color:var(--foreground)]/60">Last Attendance</div>
+                <div className="text-sm mt-1">{myAttendance?.lastAction ? myAttendance.lastAction.replace('_',' ') : '—'}</div>
+                <div className="text-[11px] text-[color:var(--foreground)]/50">{myAttendance?.lastAt ? new Date(myAttendance.lastAt).toLocaleString() : ''}</div>
+              </div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4">
+                <div className="text-xs text-[color:var(--foreground)]/60">Punches (7 days)</div>
+                <div className="text-2xl font-semibold">{myAttendance?.thisWeekCount ?? 0}</div>
+              </div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4">
+                <div className="text-xs text-[color:var(--foreground)]/60">Today</div>
+                <div className="text-sm mt-1">Scheduled start: {myAttendance?.scheduledStart ?? '—'}</div>
+                {myAttendance?.late !== undefined && (
+                  <div className={`text-xs mt-1 ${myAttendance.late ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{myAttendance.late ? 'You were late today' : 'On time'}</div>
+                )}
+                <div className="mt-2 max-h-24 overflow-auto text-[11px] border border-[color:var(--card-border)]/60 rounded p-2">
+                  {(myAttendance?.todayTimeline?.length ?? 0) === 0 && <div className="text-[color:var(--foreground)]/50">No activity yet</div>}
+                  {myAttendance?.todayTimeline?.map((e, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-0.5">
+                      <span className="capitalize">{e.action.replace('_',' ')}</span>
+                      <span className="text-[color:var(--foreground)]/60">{e.time}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => router.push('/attendance')} className="mt-2 text-xs rounded-md border px-2 py-1">Open Attendance</button>
               </div>
             </div>
           </section>
@@ -283,9 +423,10 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                   <h3 className="text-lg font-semibold mb-2">{module.name}</h3>
                   <p className="text-sm mb-4 text-[color:var(--foreground)]/70">{module.description}</p>
                   <div className="flex gap-2">
-                    {module.status === "subscribed" ? (
+                    {['subscribed','trial'].includes(module.status) && (
                       <Button aria-label={`Open ${module.name} module`} className="flex-1 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white" onClick={() => router.push(module.route)}>Open</Button>
-                    ) : (
+                    )}
+                    {moduleManagers && module.status === 'available' && (
                       <>
                         <Button aria-label={`Preview ${module.name} module`} variant="outline" className="flex-1" onClick={() => router.push(module.route)}>Preview</Button>
                         <Button aria-label={`Subscribe to ${module.name}`} disabled={pending === module.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleSubscribe(module)}>

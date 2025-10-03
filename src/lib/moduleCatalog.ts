@@ -110,6 +110,7 @@ export interface ModuleDbRow { code: ModuleCode | string; status: string }
 export function mergeDbWithCatalog(dbRows: ModuleDbRow[], userRole: string): EffectiveModule[] {
   const subscribedCodes = new Set<string>();
   const results: EffectiveModule[] = [];
+  const canManageModules = ["owner", "admin"].includes(userRole);
 
   for (const row of dbRows) {
     const cat = moduleCatalog[row.code as ModuleCode];
@@ -120,11 +121,13 @@ export function mergeDbWithCatalog(dbRows: ModuleDbRow[], userRole: string): Eff
   }
 
   // Add available (not subscribed) modules visible to role
-  Object.values(moduleCatalog).forEach((cat) => {
-    if (subscribedCodes.has(cat.code)) return;
-    if (cat.managerOnly && !["manager", "admin", "owner"].includes(userRole)) return;
-    results.push({ id: cat.code, name: cat.name, description: cat.description, iconName: cat.iconName, status: "available", route: mapRoute(cat.code), sortOrder: cat.sortOrder });
-  });
+  if (canManageModules) {
+    Object.values(moduleCatalog).forEach((cat) => {
+      if (subscribedCodes.has(cat.code)) return;
+      if (cat.managerOnly && !["manager", "admin", "owner"].includes(userRole)) return;
+      results.push({ id: cat.code, name: cat.name, description: cat.description, iconName: cat.iconName, status: "available", route: mapRoute(cat.code), sortOrder: cat.sortOrder });
+    });
+  }
 
   return results.sort((a, b) => a.sortOrder - b.sortOrder);
 }

@@ -56,6 +56,19 @@ CREATE TABLE public.employees (
   CONSTRAINT employees_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
   CONSTRAINT employees_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.face_embeddings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  tenant_id uuid NOT NULL,
+  embedding USER-DEFINED NOT NULL,
+  label text,
+  metadata jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT face_embeddings_pkey PRIMARY KEY (id),
+  CONSTRAINT face_embeddings_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT face_embeddings_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
+);
 CREATE TABLE public.inventory (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   tenant_id uuid NOT NULL,
@@ -99,6 +112,20 @@ CREATE TABLE public.machinery (
   CONSTRAINT machinery_pkey PRIMARY KEY (id),
   CONSTRAINT machinery_assigned_to_fkey FOREIGN KEY (assigned_to) REFERENCES public.employees(id),
   CONSTRAINT machinery_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
+);
+CREATE TABLE public.modules (
+  code text NOT NULL,
+  name text NOT NULL,
+  description text,
+  category text,
+  tier_min text DEFAULT 'starter'::text,
+  icon text,
+  is_core boolean DEFAULT false,
+  recommended boolean DEFAULT false,
+  sort_order integer DEFAULT 100,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT modules_pkey PRIMARY KEY (code)
 );
 CREATE TABLE public.order_items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -196,6 +223,20 @@ CREATE TABLE public.stores (
   CONSTRAINT stores_manager_id_fkey FOREIGN KEY (manager_id) REFERENCES auth.users(id),
   CONSTRAINT stores_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
 );
+CREATE TABLE public.tenant_invitations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL,
+  email USER-DEFINED NOT NULL,
+  role text NOT NULL CHECK (role = ANY (ARRAY['employee'::text, 'manager'::text, 'admin'::text])),
+  token text NOT NULL UNIQUE,
+  expires_at timestamp with time zone NOT NULL DEFAULT (now() + '7 days'::interval),
+  accepted_at timestamp with time zone,
+  created_by uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT tenant_invitations_pkey PRIMARY KEY (id),
+  CONSTRAINT tenant_invitations_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
+  CONSTRAINT tenant_invitations_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
 CREATE TABLE public.tenant_memberships (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   tenant_id uuid NOT NULL,
@@ -208,6 +249,21 @@ CREATE TABLE public.tenant_memberships (
   CONSTRAINT tenant_memberships_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES auth.users(id),
   CONSTRAINT tenant_memberships_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
   CONSTRAINT tenant_memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.tenant_module_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL,
+  module_code text NOT NULL,
+  status USER-DEFINED NOT NULL DEFAULT 'active'::module_subscription_status,
+  trial_ends_at timestamp with time zone,
+  activated_at timestamp with time zone DEFAULT now(),
+  canceled_at timestamp with time zone,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tenant_module_subscriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT tenant_module_subscriptions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
+  CONSTRAINT tenant_module_subscriptions_module_code_fkey FOREIGN KEY (module_code) REFERENCES public.modules(code)
 );
 CREATE TABLE public.tenants (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

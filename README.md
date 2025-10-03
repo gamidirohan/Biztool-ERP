@@ -67,11 +67,60 @@ This is the initial setup with:
 ## Development
 
 The project is set up for modern React development with:
-- TypeScript for type safety
-- ESLint for code quality
-- Tailwind CSS for styling
-- Component-based architecture
 
+
+## Face Attendance (FACEIO)
+
+This app integrates FACEIO for face-based attendance.
+
+- Client wrapper: `src/lib/faceio.ts` dynamically loads the SDK and exposes `faceEnroll()` and `faceAuthenticate()`.
+- UI: `src/app/attendance/FaceAttendance.tsx` provides buttons to enroll a face and punch in/out.
+- API routes:
+   - `POST /api/attendance/enroll` stores the FACEIO reference (facialId) in your `employees.face_embedding` JSON.
+   - `POST /api/attendance/record` records check-in/out in `attendance_records` after authenticating.
+
+Environment variable required:
+
+- `NEXT_PUBLIC_FACEIO_APP_KEY` — your FACEIO public application key (client-side).
+
+Module gating:
+
+- The Attendance module is only shown and usable when the tenant has subscribed to it.
+- We check the `tenant_effective_modules` view if available, falling back to `tenant_module_subscriptions`.
+
+Data flow:
+
+- Enrollment: FACEIO returns a `facialId`; we link it to the current employee row (same user) in `employees.face_embedding`.
+- Punch: FACEIO authenticate -> send `facialId` -> we validate match with the employee for the current user+tenant -> insert into `attendance_records`.
+
+Notes: You must have an `employees` row associated to the user (`employees.user_id`) and a `user_profiles` row with `tenant_id`.
+
+## Dev/Test accounts (Supabase)
+
+For local testing across roles and tenants, use the provided scripts. These require:
+
+- NEXT_PUBLIC_SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY (server secret; do not commit)
+
+Commands (PowerShell):
+
+```powershell
+$env:NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"; $env:SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"; npm run seed:dev
+$env:NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"; $env:SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"; npm run list:users
+$env:NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"; $env:SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"; npm run reset:user -- user@example.com NewPass123!
+```
+
+Seeded demo users:
+
+- acme-admin@demo.local / Demo12345! (admin @ acme)
+- acme-manager@demo.local / Demo12345! (manager @ acme)
+- acme-employee@demo.local / Demo12345! (employee @ acme)
+- globex-admin@demo.local / Demo12345! (admin @ globex)
+
+Safety notes:
+
+- Use in dev only. Service role key is highly privileged—never expose in the browser or commit it.
+- These scripts upsert tenants, profiles, memberships, employees, and activate core module subscriptions to allow testing.
 ## Contributing
 
 1. Fork the repository

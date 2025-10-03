@@ -1,6 +1,6 @@
 // burger-menu.tsx
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -16,6 +16,8 @@ interface BurgerMenuProps {
 
 export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   const [user, setUser] = useState<User | null>(null); // Updated type to match Supabase user object
+  const [attendanceActive, setAttendanceActive] = useState<boolean>(false);
+  const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -24,6 +26,39 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        // Determine tenant and attendance module status
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("tenant_id,role")
+          .eq("id", user.id)
+          .single();
+        if (profile?.role) setRole(profile.role);
+        const tenantId = profile?.tenant_id;
+        if (tenantId) {
+          // Try effective view first
+          const { data: mods, error: viewErr } = await supabase
+            .from("tenant_effective_modules")
+            .select("code,status")
+            .eq("tenant_id", tenantId)
+            .eq("code", "attendance");
+          if (!viewErr && mods && mods.length > 0) {
+            const status = (mods[0] as any).status as string;
+            setAttendanceActive(["active","subscribed","trial"].includes(status));
+          } else {
+            // Fallback to raw subscriptions table
+            const { data: subs } = await supabase
+              .from("tenant_module_subscriptions")
+              .select("module_code,status")
+              .eq("tenant_id", tenantId)
+              .eq("module_code", "attendance")
+              .in("status", ["active","trial"]);
+            setAttendanceActive(Boolean(subs && subs.length > 0));
+          }
+        }
+      } else {
+        setAttendanceActive(false);
+      }
     };
 
     fetchUser();
@@ -53,6 +88,8 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
     await supabase.auth.signOut();
     setUser(null);
   };
+
+  const canSeeManager = role ? ["manager","admin","owner"].includes(role) : false;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
@@ -85,9 +122,13 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
         {/* Navigation Items */}
         <nav className="space-y-4 mt-4">
           <a href="/dashboard" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Dashboard</a>
-          <a href="/manager" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Manager</a>
+          {canSeeManager && (
+            <a href="/manager" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Manager</a>
+          )}
           <a href="/store" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Store</a>
-          <a href="/attendance" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Attendance</a>
+          {attendanceActive && (
+            <a href="/attendance" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">Attendance</a>
+          )}
           <a href="/hr" className="block text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)] rounded-md px-2 py-1 transition-colors">HR</a>
         </nav>
 

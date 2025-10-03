@@ -1,0 +1,31 @@
+Demo accounts:
+- company1-owner@demo.local (owner @ company1) / password: 1234
+- company1-admin@demo.local (admin @ company1) / password: 1234
+- company1-employee@demo.local (employee @ company1) / password: 1234
+- company2-owner@demo.local (owner @ company2) / password: 1234
+- company2-admin@demo.local (admin @ company2) / password: 1234
+- company2-employee@demo.local (employee @ company2) / password: 1234
+
+
+
+
+
+
+
+Users:
+- company2-employee@demo.local | role=employee | tenant=company2 | employee=yes
+- company2-admin@demo.local | role=admin | tenant=company2 | employee=yes
+- company2-owner@demo.local | role=owner | tenant=company2 | employee=no
+- company1-employee@demo.local | role=employee | tenant=company1 | employee=yes
+- company1-admin@demo.local | role=admin | tenant=company1 | employee=yes
+- company1-owner@demo.local | role=owner | tenant=company1 | employee=no
+- fatedev453@gddcorp.com | role=n/a | tenant=n/a | employee=no
+- bijade1431@bitfami.com | role=n/a | tenant=n/a | employee=no
+- rohangamidi1999@gmail.com | role=owner | tenant=orion | employee=no
+- testname@zoir.me | role=n/a | tenant=n/a | employee=no
+- test@zoir.me | role=n/a | tenant=n/a | employee=no
+- rohan@zoir.in | role=n/a | tenant=n/a | employee=no
+- manager@example.com | role=n/a | tenant=n/a | employee=no
+- rivax23988@lhory.com | role=n/a | tenant=n/a | employee=no
+- vomen49665@mytaemin.com | role=n/a | tenant=n/a | employee=no
+- rohangamidi@gmail.com | role=n/a | tenant=n/a | employee=no

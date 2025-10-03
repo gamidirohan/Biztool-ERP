@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,34 +24,52 @@ interface NavigationMenuProps {
 export function NavigationMenu({ isOpen, onClose, currentPath }: NavigationMenuProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [navigationItems, setNavigationItems] = React.useState([
+    { title: "Dashboard", icon: <Home className="h-5 w-5" />, href: "/dashboard" },
+    { title: "Manager", icon: <Building2 className="h-5 w-5" />, href: "/manager" },
+    { title: "Store", icon: <Store className="h-5 w-5" />, href: "/store" },
+    { title: "HR", icon: <Users className="h-5 w-5" />, href: "/hr" },
+  ]);
 
-  const navigationItems = [
-    {
-      title: "Dashboard",
-      icon: <Home className="h-5 w-5" />,
-      href: "/dashboard"
-    },
-    {
-      title: "Manager",
-      icon: <Building2 className="h-5 w-5" />,
-      href: "/manager"
-    },
-    {
-      title: "Store",
-      icon: <Store className="h-5 w-5" />,
-      href: "/store"
-    },
-    {
-      title: "Attendance",
-      icon: <Clock className="h-5 w-5" />,
-      href: "/attendance"
-    },
-    {
-      title: "HR",
-      icon: <Users className="h-5 w-5" />,
-      href: "/hr"
-    }
-  ];
+  React.useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      const tenantId = profile?.tenant_id;
+      if (!tenantId) return;
+      const { data: mods, error } = await supabase
+        .from("tenant_effective_modules")
+        .select("code,status")
+        .eq("tenant_id", tenantId)
+        .eq("code", "attendance");
+      let active = false;
+      if (!error && mods && mods.length > 0) {
+        active = ["active","subscribed","trial"].includes((mods[0] as any).status);
+      } else {
+        const { data: subs } = await supabase
+          .from("tenant_module_subscriptions")
+          .select("module_code,status")
+          .eq("tenant_id", tenantId)
+          .eq("module_code", "attendance")
+          .in("status", ["active","trial"]);
+        active = Boolean(subs && subs.length > 0);
+      }
+      if (active) {
+        setNavigationItems(prev => {
+          // Insert Attendance after Store
+          const next = [...prev];
+          const has = next.some(i => i.href === "/attendance");
+          if (!has) next.splice(3, 0, { title: "Attendance", icon: <Clock className="h-5 w-5" />, href: "/attendance" });
+          return next;
+        });
+      }
+    })();
+  }, [supabase]);
 
   const handleNavigation = (href: string) => {
     router.push(href);
