@@ -6,13 +6,15 @@ import { Button } from "./button";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { Menu, Home } from "lucide-react"; 
+import { Menu } from "lucide-react"; 
 import { BurgerMenu } from "@/components/ui/burger-menu";
+import { useRouter } from "next/navigation";
 
 export function AppHeader() {
   const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const getUser = async () => {
@@ -33,13 +35,18 @@ export function AppHeader() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    router.push("/");
   };
 
   return (
-    <header className="flex items-center justify-between p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800">
+    <header className="flex items-center justify-between p-4 bg-[color:var(--card-bg)]/80 backdrop-blur-sm sticky top-0 z-50 border-b border-[color:var(--border)]">
       <div className="flex items-center gap-4">
         <Link href="/" aria-label="Home">
-          <Home className="h-6 w-6 text-[color:var(--foreground)]" />
+          <img 
+            src="/BizTool Logo.png" 
+            alt="BizTool Logo" 
+            className="h-15 w-auto"
+          />
         </Link>
       </div>
       <div className="flex items-center gap-4">
@@ -54,7 +61,7 @@ export function AppHeader() {
           </a>
         )}
         <button
-          className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700"
+          className="p-2 rounded-md hover:bg-[color:var(--muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40"
           aria-label="Open menu"
           onClick={() => setIsMenuOpen(true)}
         >

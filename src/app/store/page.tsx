@@ -12,7 +12,7 @@ export default function StorePage() {
         <div className="text-center py-16">
           <div className="max-w-2xl mx-auto">
             <div className="bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-8">
-              <Store className="h-24 w-24 text-purple-500 mx-auto mb-6" />
+              <Store className="h-24 w-24 mx-auto mb-6" style={{ color: 'var(--module-purple)' }} />
               <h2 className="text-3xl font-bold mb-4">Store Module</h2>
               <p className="text-lg mb-8">
                 Retail management, inventory tracking, sales analytics, and e-commerce integration.
@@ -25,7 +25,7 @@ export default function StorePage() {
               </div>
               <div className="flex justify-center space-x-4">
                 <Link href="/">
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white" aria-label="Home">
+                  <Button className="text-white" style={{ backgroundColor: 'var(--module-purple)' }} aria-label="Home">
                     <Home className="h-5 w-5" />
                   </Button>
                 </Link>

@@ -15,7 +15,7 @@ export function MobileHeader({ companyName, userRole = "Owner", avatarUrl }: Mob
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/80 p-4 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-[color:var(--border)] bg-[color:var(--background)]/80 p-4 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="relative">
             {avatarUrl ? (
@@ -28,14 +28,14 @@ export function MobileHeader({ companyName, userRole = "Owner", avatarUrl }: Mob
             )}
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg font-bold text-foreground">{companyName}</h1>
-            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
+            <h1 className="text-lg font-bold text-[color:var(--foreground)]">{companyName}</h1>
+            <span className="rounded-full bg-[color:var(--primary)]/20 px-2 py-0.5 text-xs font-medium text-[color:var(--primary)]">
               {userRole}
             </span>
           </div>
         </div>
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-foreground hover:bg-muted"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-[color:var(--foreground)] hover:bg-[color:var(--muted)]"
           aria-label="Open menu"
           onClick={() => setIsMenuOpen(true)}
         >

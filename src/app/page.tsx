@@ -45,47 +45,47 @@ const modules = [
   {
     title: "Manager",
     description: "Comprehensive business management dashboard with real-time analytics and reporting tools.",
-    icon: <Building2 className="h-10 w-10 text-blue-500" />,
+    icon: <Building2 className="h-10 w-10" style={{ color: 'var(--module-blue)' }} />,
     href: "/manager"
   },
   {
     title: "Store Module",
     description: "Complete inventory management, sales tracking, and customer relationship tools.",
-    icon: <Store className="h-10 w-10 text-green-500" />,
+    icon: <Store className="h-10 w-10" style={{ color: 'var(--module-green)' }} />,
     href: "/store"
   },
   {
     title: "Attendance Module",
     description: "Employee time tracking, leave management, and attendance analytics.",
-    icon: <Clock className="h-10 w-10 text-purple-500" />,
+    icon: <Clock className="h-10 w-10" style={{ color: 'var(--module-purple)' }} />,
     href: "/attendance"
   },
   {
     title: "HR Module",
     description: "Human resources management, payroll, recruitment, and employee development.",
-    icon: <Users className="h-10 w-10 text-orange-500" />,
+    icon: <Users className="h-10 w-10" style={{ color: 'var(--module-orange)' }} />,
     href: "/hr"
   }
 ];
 
 const features = [
   {
-    icon: <Smartphone className="h-6 w-6 text-blue-500" />,
+    icon: <Smartphone className="h-6 w-6" style={{ color: 'var(--module-blue)' }} />,
     title: "Mobile First Design",
     description: "Optimized for mobile devices with responsive design"
   },
   {
-    icon: <TrendingUp className="h-6 w-6 text-green-500" />,
+    icon: <TrendingUp className="h-6 w-6" style={{ color: 'var(--module-green)' }} />,
     title: "Growth Focused",
     description: "Built to scale with your business needs"
   },
   {
-    icon: <Shield className="h-6 w-6 text-purple-500" />,
+    icon: <Shield className="h-6 w-6" style={{ color: 'var(--module-purple)' }} />,
     title: "Secure & Reliable",
     description: "Enterprise-grade security and data protection"
   },
   {
-    icon: <Zap className="h-6 w-6 text-yellow-500" />,
+    icon: <Zap className="h-6 w-6" style={{ color: 'var(--warning)' }} />,
     title: "Lightning Fast",
     description: "Optimized performance for quick operations"
   }
@@ -147,44 +147,44 @@ return (
         </div>
       </main>
       {/* Footer */}
-      <footer className="bg-gray-900 text-white px-4 py-12 sm:px-6 lg:px-8">
+      <footer className="bg-[color:var(--footer-bg)] text-[color:var(--footer-text)] px-4 py-12 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Building2 className="h-8 w-8 text-blue-500" />
+                <Building2 className="h-8 w-8" style={{ color: 'var(--module-blue)' }} />
                 <span className="text-2xl font-bold">BizTool</span>
               </div>
-              <p className="text-gray-400">
+              <p className="text-[color:var(--footer-text-muted)]">
                 Streamline your business operations with our comprehensive ERP & CRM solution.
               </p>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/tutorials" className="hover:text-white">Tutorials</Link></li>
-                <li><Link href="/documentation" className="hover:text-white">Documentation</Link></li>
-                <li><Link href="/forum" className="hover:text-white">Forum</Link></li>
+              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
+                <li><Link href="/tutorials" className="hover:text-[color:var(--footer-text)] transition">Tutorials</Link></li>
+                <li><Link href="/documentation" className="hover:text-[color:var(--footer-text)] transition">Documentation</Link></li>
+                <li><Link href="/forum" className="hover:text-[color:var(--footer-text)] transition">Forum</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Services</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/hosting" className="hover:text-white">Hosting</Link></li>
-                <li><Link href="/support" className="hover:text-white">Support</Link></li>
-                <li><Link href="/custom" className="hover:text-white">Custom Development</Link></li>
+              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
+                <li><Link href="/hosting" className="hover:text-[color:var(--footer-text)] transition">Hosting</Link></li>
+                <li><Link href="/support" className="hover:text-[color:var(--footer-text)] transition">Support</Link></li>
+                <li><Link href="/custom" className="hover:text-[color:var(--footer-text)] transition">Custom Development</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">About Us</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/company" className="hover:text-white">Our Company</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
-                <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
+              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
+                <li><Link href="/company" className="hover:text-[color:var(--footer-text)] transition">Our Company</Link></li>
+                <li><Link href="/contact" className="hover:text-[color:var(--footer-text)] transition">Contact Us</Link></li>
+                <li><Link href="/careers" className="hover:text-[color:var(--footer-text)] transition">Careers</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <div className="border-t border-[color:var(--border)] mt-8 pt-8 text-center text-[color:var(--footer-text-muted)]">
             <p>&copy; 2025 BizTool. All rights reserved.</p>
           </div>
         </div>

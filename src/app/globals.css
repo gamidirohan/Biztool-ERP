@@ -1,35 +1,111 @@
 @import "tailwindcss";
 
 :root {
+  /* Base colors */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Card styling */
   --card-bg: #fff;
   --card-border: #e5e7eb;
   --card-shadow: 0 1px 4px 0 rgba(0,0,0,0.03);
+  
+  /* Brand colors */
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
   --secondary: #f3f4f6;
   --accent: #6366f1;
+  
+  /* Status colors */
   --success: #22c55e;
+  --success-hover: #16a34a;
   --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --warning: #f59e0b;
+  --warning-hover: #d97706;
+  --info: #3b82f6;
+  --info-hover: #2563eb;
+  
+  /* Module-specific colors */
+  --module-blue: #2563eb;
+  --module-blue-hover: #1d4ed8;
+  --module-green: #22c55e;
+  --module-green-hover: #16a34a;
+  --module-purple: #9333ea;
+  --module-purple-hover: #7e22ce;
+  --module-orange: #f97316;
+  --module-orange-hover: #ea580c;
+  
+  /* Neutral colors */
   --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Footer */
+  --footer-bg: #111827;
+  --footer-text: #ffffff;
+  --footer-text-muted: #9ca3af;
+  
+  /* Fonts */
   --font-sans: 'Inter', 'Geist', Arial, Helvetica, sans-serif;
   --font-mono: 'Geist Mono', 'Menlo', 'Monaco', monospace;
 }
 
 .dark {
+  /* Base colors */
   --background: #0a0a0a;
   --foreground: #ededed;
+  
+  /* Card styling */
   --card-bg: #171717;
   --card-border: #232323;
   --card-shadow: 0 1px 4px 0 rgba(0,0,0,0.25);
+  
+  /* Brand colors */
   --primary: #60a5fa;
   --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
   --secondary: #232323;
   --accent: #a78bfa;
+  
+  /* Status colors */
   --success: #4ade80;
+  --success-hover: #22c55e;
   --danger: #f87171;
+  --danger-hover: #ef4444;
+  --warning: #fbbf24;
+  --warning-hover: #f59e0b;
+  --info: #60a5fa;
+  --info-hover: #3b82f6;
+  
+  /* Module-specific colors */
+  --module-blue: #60a5fa;
+  --module-blue-hover: #3b82f6;
+  --module-green: #4ade80;
+  --module-green-hover: #22c55e;
+  --module-purple: #a78bfa;
+  --module-purple-hover: #9333ea;
+  --module-orange: #fb923c;
+  --module-orange-hover: #f97316;
+  
+  /* Neutral colors */
   --muted: #18181b;
+  --muted-foreground: #9ca3af;
+  --border: #232323;
+  
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Footer */
+  --footer-bg: #0f172a;
+  --footer-text: #ffffff;
+  --footer-text-muted: #94a3b8;
+  
+  /* Fonts */
   --font-sans: 'Inter', 'Geist', Arial, Helvetica, sans-serif;
   --font-mono: 'Geist Mono', 'Menlo', 'Monaco', monospace;
 }

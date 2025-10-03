@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 interface BurgerMenuProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   const [attendanceActive, setAttendanceActive] = useState<boolean>(false);
   const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -87,6 +89,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    router.push("/");
   };
 
   const canSeeManager = role ? ["manager","admin","owner"].includes(role) : false;
@@ -95,7 +98,8 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
     <div className="fixed inset-0 z-50 flex">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0"
+        style={{ backgroundColor: 'var(--overlay)' }}
         onClick={onClose}
         aria-hidden="true"
       ></div>

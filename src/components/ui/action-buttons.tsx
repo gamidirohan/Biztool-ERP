@@ -10,13 +10,13 @@ export function ActionButtons({ onInvite, onAddModule }: ActionButtonsProps) {
     <div className="flex gap-3 mb-6">
       <Button
         variant="outline"
-        className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+        className="flex-1 bg-[color:var(--primary)]/10 text-[color:var(--primary)] border-[color:var(--primary)]/20 hover:bg-[color:var(--primary)]/20"
         onClick={onInvite}
       >
         <span className="truncate">Invite</span>
       </Button>
       <Button
-        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+        className="flex-1 bg-[color:var(--primary)] text-[color:var(--primary-foreground)] hover:bg-[color:var(--primary-hover)]"
         onClick={onAddModule}
       >
         <span className="truncate">Add module</span>

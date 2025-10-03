@@ -26,7 +26,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <AppHeader />
+          {/* AppHeader is hidden on mobile (< 768px) as dashboard and other pages have their own mobile layouts */}
+          <div className="hidden md:block">
+            <AppHeader />
+          </div>
           {children}
         </ThemeProvider>
       </body>

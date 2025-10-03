@@ -1,7 +1,7 @@
 Demo accounts:
 - company1-owner@demo.local (owner @ company1) / password: 1234
 - company1-admin@demo.local (admin @ company1) / password: 1234
-- company1-employee@demo.local (employee @ company1) / password: 1234
+- kovoyob628@aupvs.com (employee @ company1) / password: 123456
 - company2-owner@demo.local (owner @ company2) / password: 1234
 - company2-admin@demo.local (admin @ company2) / password: 1234
 - company2-employee@demo.local (employee @ company2) / password: 1234

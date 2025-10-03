@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Clock, Settings, CreditCard, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MobileDashboard } from "@/components/ui/mobile-dashboard";
+import { DailyTasks } from "@/components/ui/daily-tasks";
 
 interface ModuleDef { id: string; name: string; description: string; iconName: string; status: string; route: string; sortOrder?: number }
 interface PendingInvite { id: string; email: string; role: string; created_at: string; expires_at: string }
@@ -26,6 +27,8 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
   const privileged = ['owner','manager','admin'].includes(effectiveRole);
   const [team, setTeam] = useState<Array<{ id: string; name: string; lastAction?: string; lastAt?: string }>>([]);
   const [myAttendance, setMyAttendance] = useState<{ lastAction?: string; lastAt?: string; thisWeekCount?: number; todayTimeline?: Array<{ time: string; action: string }>; late?: boolean; scheduledStart?: string } | null>(null);
+  const [attendanceStats, setAttendanceStats] = useState<{ presentToday: number; totalEmployees: number; attendanceRate: number } | null>(null);
+  const [attendanceStatsLoading, setAttendanceStatsLoading] = useState(false);
   const moduleManagers = ['owner','admin'].includes(effectiveRole);
 
   useEffect(() => {
@@ -159,6 +162,47 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
       setMyAttendance({ lastAction: last?.action, lastAt: last?.created_at, thisWeekCount: count ?? 0, todayTimeline: timeline, late, scheduledStart });
     })();
   }, [privileged, profile?.tenant_id, user?.id]);
+
+  // Load attendance stats for privileged users
+  useEffect(() => {
+    (async () => {
+      if (!privileged || !profile?.tenant_id) return;
+      setAttendanceStatsLoading(true);
+
+      const supabase = createClient();
+
+      // Get total employees
+      const { count: totalEmployees } = await supabase
+        .from('employees')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', profile.tenant_id);
+
+      // Get today's attendance
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: todayRecords } = await supabase
+        .from('attendance_records')
+        .select('employee_id, action')
+        .eq('tenant_id', profile.tenant_id)
+        .gte('created_at', startOfDay.toISOString())
+        .lte('created_at', endOfDay.toISOString());
+
+      // Count unique employees who checked in today
+      const presentToday = new Set(todayRecords?.filter(r => r.action === 'check_in').map(r => r.employee_id)).size;
+      const attendanceRate = totalEmployees && totalEmployees > 0 ? Math.round((presentToday / totalEmployees) * 100) : 0;
+
+      setAttendanceStats({
+        presentToday,
+        totalEmployees: totalEmployees || 0,
+        attendanceRate
+      });
+
+      setAttendanceStatsLoading(false);
+    })();
+  }, [privileged, profile?.tenant_id]);
 
   const handleInvite = async () => {
     if (!profile?.tenant_id) return;
@@ -306,7 +350,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                 <button disabled className="text-xs rounded-md border border-[color:var(--card-border)] px-3 py-1.5 opacity-60">User Management (soon)</button>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
               <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
                 <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Active Users</span><Users className="h-4 w-4" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
@@ -323,6 +367,15 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                 <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Pending Invites</span><Mail className="h-4 w-4" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {orgStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : orgStats?.pendingInvites ?? pendingInvites.length}
+                </div>
+              </div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Today's Attendance</span><CalendarCheck className="h-4 w-4" /></div>
+                <div className="text-2xl font-semibold tracking-tight">
+                  {attendanceStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : `${attendanceStats?.attendanceRate ?? 0}%`}
+                </div>
+                <div className="text-xs text-[color:var(--foreground)]/50">
+                  {attendanceStats ? `${attendanceStats.presentToday}/${attendanceStats.totalEmployees} present` : 'Loading...'}
                 </div>
               </div>
               <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
@@ -393,53 +446,59 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
           </section>
         )}
 
-        {/* Modules Section */}
-        <section aria-labelledby="modules-heading" className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 id="modules-heading" className="text-lg font-semibold">Your Modules</h2>
-            {privileged && (
-              <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 text-xs rounded-md border border-[color:var(--card-border)] px-3 py-1.5 hover:bg-[color:var(--card-bg)]/60 transition" aria-label="Invite a new user">
-                <Plus className="h-4 w-4" /> Invite
-              </button>
-            )}
-          </div>
-          {localModules.length === 0 && (
-            <div className="border border-dashed border-[color:var(--card-border)] rounded-lg p-10 text-center text-sm text-[color:var(--foreground)]/60">
-              <p className="mb-3 font-medium">No modules yet</p>
-              <p className="mb-4">Core modules will appear here once provisioned.</p>
-              {privileged && <Button onClick={()=>router.refresh()} variant="outline" size="sm">Refresh</Button>}
+        {/* Modules Section or Daily Tasks */}
+        {effectiveRole === 'employee' ? (
+          <section aria-labelledby="tasks-heading" className="mb-12">
+            <DailyTasks />
+          </section>
+        ) : (
+          <section aria-labelledby="modules-heading" className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 id="modules-heading" className="text-lg font-semibold">Your Modules</h2>
+              {privileged && (
+                <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 text-xs rounded-md border border-[color:var(--card-border)] px-3 py-1.5 hover:bg-[color:var(--card-bg)]/60 transition" aria-label="Invite a new user">
+                  <Plus className="h-4 w-4" /> Invite
+                </button>
+              )}
             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {localModules.map(module => {
-              const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = { "layout-dashboard": LayoutDashboard, "calendar-check": CalendarCheck, users: Users, boxes: Boxes, "shield-check": ShieldCheck, "chart-line": ChartLine, clock: Clock };
-              const Icon = ICON_MAP[module.iconName] || LayoutDashboard;
-              return (
-                <div key={module.id} className="group bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-6 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-[color:var(--primary)]/40">
-                  <div className="flex items-center justify-between mb-4">
-                    <Icon className="h-8 w-8 text-[color:var(--primary)]" />
-                    {module.status === "subscribed" && <CheckCircle className="h-5 w-5 text-green-500" aria-label="Subscribed" />}
+            {localModules.length === 0 && (
+              <div className="border border-dashed border-[color:var(--card-border)] rounded-lg p-10 text-center text-sm text-[color:var(--foreground)]/60">
+                <p className="mb-3 font-medium">No modules yet</p>
+                <p className="mb-4">Core modules will appear here once provisioned.</p>
+                {privileged && <Button onClick={()=>router.refresh()} variant="outline" size="sm">Refresh</Button>}
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {localModules.map(module => {
+                const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = { "layout-dashboard": LayoutDashboard, "calendar-check": CalendarCheck, users: Users, boxes: Boxes, "shield-check": ShieldCheck, "chart-line": ChartLine, clock: Clock };
+                const Icon = ICON_MAP[module.iconName] || LayoutDashboard;
+                return (
+                  <div key={module.id} className="group bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-6 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-[color:var(--primary)]/40">
+                    <div className="flex items-center justify-between mb-4">
+                      <Icon className="h-8 w-8 text-[color:var(--primary)]" />
+                      {module.status === "subscribed" && <CheckCircle className="h-5 w-5" style={{ color: 'var(--success)' }} aria-label="Subscribed" />}
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{module.name}</h3>
+                    <p className="text-sm mb-4 text-[color:var(--foreground)]/70">{module.description}</p>
+                    <div className="flex gap-2">
+                      {['subscribed','trial'].includes(module.status) && (
+                        <Button aria-label={`Open ${module.name} module`} className="flex-1 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white" onClick={() => router.push(module.route)}>Open</Button>
+                      )}
+                      {moduleManagers && module.status === 'available' && (
+                        <>
+                          <Button aria-label={`Preview ${module.name} module`} variant="outline" className="flex-1" onClick={() => router.push(module.route)}>Preview</Button>
+                          <Button aria-label={`Subscribe to ${module.name}`} disabled={pending === module.id} className="flex-1 text-white" style={{ backgroundColor: 'var(--success)' }} onClick={() => handleSubscribe(module)}>
+                            {pending === module.id ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Subscribing</span> : 'Subscribe'}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{module.name}</h3>
-                  <p className="text-sm mb-4 text-[color:var(--foreground)]/70">{module.description}</p>
-                  <div className="flex gap-2">
-                    {['subscribed','trial'].includes(module.status) && (
-                      <Button aria-label={`Open ${module.name} module`} className="flex-1 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white" onClick={() => router.push(module.route)}>Open</Button>
-                    )}
-                    {moduleManagers && module.status === 'available' && (
-                      <>
-                        <Button aria-label={`Preview ${module.name} module`} variant="outline" className="flex-1" onClick={() => router.push(module.route)}>Preview</Button>
-                        <Button aria-label={`Subscribe to ${module.name}`} disabled={pending === module.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleSubscribe(module)}>
-                          {pending === module.id ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Subscribing</span> : 'Subscribe'}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Invitations Section (privileged) */}
         {privileged && (

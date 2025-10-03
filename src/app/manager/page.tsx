@@ -12,7 +12,7 @@ export default function ManagerPage() {
         <div className="text-center py-16">
           <div className="max-w-2xl mx-auto">
             <div className="bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-8">
-              <Shield className="h-24 w-24 text-blue-500 mx-auto mb-6" />
+              <Shield className="h-24 w-24 mx-auto mb-6" style={{ color: 'var(--module-blue)' }} />
               <h2 className="text-3xl font-bold mb-4">Manager Module</h2>
               <p className="text-lg mb-8">
                 Comprehensive business management dashboard with real-time analytics
@@ -28,7 +28,8 @@ export default function ManagerPage() {
               <div className="flex justify-center space-x-4">
                 <Link href="/">
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="text-white"
+                    style={{ backgroundColor: 'var(--module-blue)' }}
                     aria-label="Home"
                   >
                     <Home className="h-5 w-5" />
