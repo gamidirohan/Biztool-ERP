@@ -49,7 +49,7 @@ export function NavigationMenu({ isOpen, onClose, currentPath }: NavigationMenuP
         .eq("code", "attendance");
       let active = false;
       if (!error && mods && mods.length > 0) {
-        active = ["active","subscribed","trial"].includes((mods[0] as any).status);
+        active = ["active","subscribed","trial"].includes((mods[0] as { status: string }).status);
       } else {
         const { data: subs } = await supabase
           .from("tenant_module_subscriptions")

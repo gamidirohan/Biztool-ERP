@@ -63,7 +63,7 @@ export function MobileBottomNavigation() {
         .eq("code", "attendance");
       let active = false;
       if (!error && mods && mods.length > 0) {
-        active = ["active","subscribed","trial"].includes((mods[0] as any).status);
+        active = ["active","subscribed","trial"].includes((mods[0] as { status: string }).status);
       } else {
         const { data: subs } = await supabase
           .from("tenant_module_subscriptions")
@@ -73,7 +73,7 @@ export function MobileBottomNavigation() {
           .in("status", ["active","trial"]);
         active = Boolean(subs && subs.length > 0);
       }
-      setNavItems(prev => {
+      setNavItems(() => {
         const items = [...baseItems];
         if (active) items.splice(2, 0, { icon: <CalendarCheck className="h-5 w-5" />, label: "Attendance", href: "/attendance" });
         return items;

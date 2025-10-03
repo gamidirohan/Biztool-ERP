@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         .eq("tenant_id", profile.tenant_id)
         .eq("user_id", user.id);
       if (!assignErr && assigns && assigns.length > 0) {
-        const allow = new Set<string>(assigns.map((a: any) => a.module_code));
+        const allow = new Set<string>(assigns.map((a: { module_code: string }) => a.module_code));
         modules = modules.filter((m) => allow.has(m.code));
       }
       // if table missing or no rows, we keep the full subscribed set

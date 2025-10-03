@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
     if (!profile?.tenant_id) return NextResponse.json({ error: "No tenant - please join or create a tenant first" }, { status: 400 });
 
     // Verify attendance module is active for tenant
-    const { data: mod, error: viewErr } = await supabase
+    const { data: mod } = await supabase
       .from("tenant_effective_modules")
       .select("status")
       .eq("tenant_id", profile.tenant_id)
       .eq("code", "attendance")
       .maybeSingle();
-    let active = !!mod && ["active", "trial", "subscribed"].includes((mod as any).status);
+    let active = !!mod && ["active", "trial", "subscribed"].includes((mod as { status: string }).status);
     if (!active) {
       // Fallback to raw subscriptions table
       const { data: subs } = await supabase
@@ -163,7 +163,8 @@ export async function POST(req: NextRequest) {
     if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
     return NextResponse.json({ ok: true, distance: matchDistance });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Unexpected error" }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Unexpected error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

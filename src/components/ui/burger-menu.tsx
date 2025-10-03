@@ -1,6 +1,6 @@
 // burger-menu.tsx
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -43,7 +43,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
             .eq("tenant_id", tenantId)
             .eq("code", "attendance");
           if (!viewErr && mods && mods.length > 0) {
-            const status = (mods[0] as any).status as string;
+            const status = (mods[0] as { status: string }).status;
             setAttendanceActive(["active","subscribed","trial"].includes(status));
           } else {
             // Fallback to raw subscriptions table
@@ -68,7 +68,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   useEffect(() => {
     if (isOpen) {

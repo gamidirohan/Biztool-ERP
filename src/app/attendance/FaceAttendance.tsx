@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getFaceEmbedding, ensureCamera, toArray } from "@/lib/faceio";
+import { getFaceEmbedding, ensureCamera, toArray } from "@/lib/face-recognition";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, LogIn, LogOut, UserPlus } from "lucide-react";
@@ -17,8 +17,6 @@ export default function FaceAttendance() {
   const [userId, setUserId] = useState<string | null>(null);
   const [faceLinked, setFaceLinked] = useState<boolean>(false);
   const [attendanceAllowed, setAttendanceAllowed] = useState<boolean>(true);
-  const [cameraAvailable, setCameraAvailable] = useState<boolean>(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Load current user profile and module subscription state
@@ -54,11 +52,6 @@ export default function FaceAttendance() {
         .eq("tenant_id", tId)
         .maybeSingle();
       setFaceLinked(Boolean(fe));
-
-      // Check camera availability - defer until user clicks a button
-      // Setting to true by default to allow button interaction
-      setCameraAvailable(true);
-      setCameraError(null);
     })();
   }, [supabase]);
 
@@ -72,10 +65,9 @@ export default function FaceAttendance() {
       // Request camera access
       try {
         await ensureCamera(videoRef.current);
-      } catch (camErr: any) {
-        setCameraAvailable(false);
-        setCameraError(camErr.message || 'Camera access denied');
-        throw new Error("Camera access denied. Please allow camera permission in your browser.");
+      } catch (camErr: unknown) {
+        const message = camErr instanceof Error ? camErr.message : 'Camera access denied';
+        throw new Error("Camera access denied. Please allow camera permission in your browser: " + message);
       }
 
       const emb = await getFaceEmbedding(videoRef.current);
@@ -88,8 +80,9 @@ export default function FaceAttendance() {
       if (!response.ok) throw new Error(data.error || "Failed to save enrollment");
       setFaceLinked(true);
       setSuccess("Face enrollment linked to your employee profile.");
-    } catch (e: any) {
-      setError(e.message || "Enrollment failed");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Enrollment failed";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -103,10 +96,9 @@ export default function FaceAttendance() {
       // Request camera access
       try {
         await ensureCamera(videoRef.current);
-      } catch (camErr: any) {
-        setCameraAvailable(false);
-        setCameraError(camErr.message || 'Camera access denied');
-        throw new Error("Camera access denied. Please allow camera permission in your browser.");
+      } catch (camErr: unknown) {
+        const message = camErr instanceof Error ? camErr.message : 'Camera access denied';
+        throw new Error("Camera access denied. Please allow camera permission in your browser: " + message);
       }
 
       const emb = await getFaceEmbedding(videoRef.current);
@@ -118,8 +110,9 @@ export default function FaceAttendance() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to record attendance");
       setSuccess(`Attendance ${action === "check_in" ? "check-in" : "check-out"} recorded.`);
-    } catch (e: any) {
-      setError(e.message || "Authentication failed");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Authentication failed";
+      setError(message);
     } finally {
       setLoading(false);
     }
