@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Circle, Plus, GripVertical, Clock, AlertTriangle, Flag } from "lucide-react";
 
 interface Task {

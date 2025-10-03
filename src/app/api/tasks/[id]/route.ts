@@ -4,6 +4,19 @@ import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';
 
+type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+
+type TaskUpdateFields = {
+  title?: string;
+  description?: string | null;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  due_date?: string | null;
+  sort_order?: number;
+  completed_at?: string | null;
+};
+
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
   request: NextRequest,
@@ -84,7 +97,14 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, priority, status, due_date, sort_order } = body;
+    const { title, description, priority, status, due_date, sort_order } = body as {
+      title?: string;
+      description?: string;
+      priority?: TaskPriority;
+      status?: TaskStatus;
+      due_date?: string | null;
+      sort_order?: number;
+    };
 
     // Get current task to check permissions
     const { data: currentTask } = await supabase
@@ -113,12 +133,12 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title.trim();
-    if (description !== undefined) updateData.description = description?.trim();
-    if (priority !== undefined) updateData.priority = priority;
-    if (due_date !== undefined) updateData.due_date = due_date;
-    if (sort_order !== undefined) updateData.sort_order = sort_order;
+  const updateData: TaskUpdateFields = {};
+  if (title !== undefined) updateData.title = title.trim();
+  if (description !== undefined) updateData.description = description?.trim() ?? null;
+  if (priority !== undefined) updateData.priority = priority;
+  if (due_date !== undefined) updateData.due_date = due_date;
+  if (sort_order !== undefined) updateData.sort_order = sort_order;
 
     // Handle status changes
     if (status !== undefined) {

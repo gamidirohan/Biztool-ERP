@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OverviewMetrics } from "@/components/ui/overview-metrics";
-import { Users, Clock, CheckCircle, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { Users, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 
 interface AttendanceStats {
   totalEmployees: number;
@@ -257,7 +257,7 @@ export default function AttendanceAnalytics() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Today's Attendance Details
+            Today&apos;s Attendance Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

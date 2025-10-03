@@ -1,6 +1,7 @@
 // app-header.tsx
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Button } from "./button";
 import { createClient } from "@/lib/supabase/client";
@@ -42,10 +43,13 @@ export function AppHeader() {
     <header className="flex items-center justify-between p-4 bg-[color:var(--card-bg)]/80 backdrop-blur-sm sticky top-0 z-50 border-b border-[color:var(--border)]">
       <div className="flex items-center gap-4">
         <Link href="/" aria-label="Home">
-          <img 
+          <Image 
             src="/BizTool Logo.png" 
             alt="BizTool Logo" 
-            className="h-15 w-auto"
+            width={250}
+            height={80}
+            className="h-auto w-auto"
+            priority
           />
         </Link>
       </div>

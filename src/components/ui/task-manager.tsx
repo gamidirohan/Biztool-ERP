@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, Plus, Search, CheckCircle, Circle, Clock, AlertTriangle, Flag, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Search, CheckCircle, Circle, Clock, AlertTriangle, Flag, Trash2 } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -41,10 +41,15 @@ export function TaskManager() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<{
+    title: string;
+    description: string;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    due_date: string;
+  }>({
     title: "",
     description: "",
-    priority: "medium" as const,
+    priority: "medium",
     due_date: ""
   });
 
@@ -365,7 +370,7 @@ export function TaskManager() {
                         <label className="block text-sm font-medium mb-2">Priority</label>
                         <Select
                           value={newTask.priority}
-                          onValueChange={(value: any) => setNewTask(prev => ({ ...prev, priority: value }))}
+                          onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setNewTask(prev => ({ ...prev, priority: value }))}
                         >
                           <SelectTrigger>
                             <SelectValue />

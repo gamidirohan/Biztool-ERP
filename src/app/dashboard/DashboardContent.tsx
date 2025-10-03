@@ -370,7 +370,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                 </div>
               </div>
               <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Today's Attendance</span><CalendarCheck className="h-4 w-4" /></div>
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Today&apos;s Attendance</span><CalendarCheck className="h-4 w-4" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {attendanceStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : `${attendanceStats?.attendanceRate ?? 0}%`}
                 </div>
