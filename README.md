@@ -128,23 +128,48 @@ Safety notes:
 
 - Use in dev only. Service role key is highly privileged—never expose in the browser or commit it.
 - These scripts upsert tenants, profiles, memberships, employees, and activate core module subscriptions to allow testing.
+
+## User Experience Analytics (Clarity + WebGazer)
+
+The app ships with optional analytics that combine Microsoft Clarity session replays/heat-maps with WebGazer eye-tracking.
+
+### 1. Microsoft Clarity (mouse, scroll, rage-click heat-maps)
+
+1. Sign in at [clarity.microsoft.com](https://clarity.microsoft.com) with any Microsoft account.
+2. Create a **New Project** and copy the generated `<script>` snippet.
+3. Set the project ID as an environment variable (PowerShell example):
+
+   ```powershell
+   $env:NEXT_PUBLIC_MS_CLARITY_ID="YOUR-CLARITY-ID"; npm run dev
+   ```
+
+When `NEXT_PUBLIC_MS_CLARITY_ID` is present, the loader script is injected automatically via `src/app/layout.tsx`.
+
+### 2. WebGazer Eye Tracking
+
+1. Ensure users grant webcam access when prompted.
+2. Toggle the feature by setting:
+
+   ```powershell
+   $env:NEXT_PUBLIC_ENABLE_EYE_TRACKING="true"; npm run dev
+   ```
+
+3. With the flag enabled, the `EyeTracker` client component streams gaze coordinates to Clarity custom tags (`gazeX`, `gazeY`).
+4. In the Clarity dashboard, add custom filters for `gazeX` / `gazeY` to slice heat-maps by eye focus.
+
+The `EyeTracker` component lives in `src/components/analytics/EyeTracker.tsx`; you can drop it into any route that should capture gaze data or adjust the listener to forward coordinates to your own backend.
+
+> Tip: For calibration, ask testers to follow an on-screen dot for a few seconds before starting the session to improve WebGazer accuracy.
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
 4. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License.
 
 ## Password reset flow
 
-This app uses Supabase Auth for password resets.
-
-- /forgot-password — Enter email to receive reset link
-- /reset-password — Enter new password after clicking email link
 
 Implementation notes:
 - Forgot page calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + "/reset-password" })`.
