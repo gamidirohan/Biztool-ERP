@@ -36,7 +36,7 @@ export interface BreadcrumbLinkProps extends React.AnchorHTMLAttributes<HTMLAnch
 
 export const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
   ({ href, children, asChild = false, className, ...props }, ref) => {
-    const Comp: any = asChild ? Slot : Link
+    const Comp: React.ElementType = asChild ? Slot : Link
     if (!asChild) {
       // When not using `asChild`, render a Next.js Link
       return (
@@ -48,7 +48,7 @@ export const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLink
 
     // As a child, allow users to pass in their own Link component or other wrappers
     return (
-      <Comp className={cn("hover:underline", className)} ref={ref as any} {...props}>
+      <Comp className={cn("hover:underline", className)} ref={ref as React.Ref<HTMLAnchorElement>} {...props}>
         {children}
       </Comp>
     )

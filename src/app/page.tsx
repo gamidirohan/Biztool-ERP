@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,6 @@ import React from "react";
 import { EyeTrackingDrawer } from "@/components/analytics/EyeTrackingDrawer";
 
 const enableEyeTracking = process.env.NEXT_PUBLIC_ENABLE_EYE_TRACKING === "true";
-
-const generateSessionId = () => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).slice(2);
-};
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

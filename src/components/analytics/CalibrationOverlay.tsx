@@ -39,14 +39,15 @@ export function CalibrationOverlay({
 
     if (step >= CALIBRATION_POINTS.length) {
       if (!calibrated && typeof window !== "undefined") {
-        const webgazer = (window as any).webgazer;
+        const webgazer = (window as Window & { webgazer?: { calibrate?: (x: number, y: number) => void } }).webgazer;
         if (webgazer?.calibrate) {
           try {
             // Calibrate with the points we showed
+            const calibrate = webgazer.calibrate;
             CALIBRATION_POINTS.forEach((point) => {
               const x = (parseFloat(point.x) / 100) * window.innerWidth;
               const y = (parseFloat(point.y) / 100) * window.innerHeight;
-              webgazer.calibrate(x, y);
+              calibrate(x, y);
             });
             setCalibrated(true);
           } catch (error) {
