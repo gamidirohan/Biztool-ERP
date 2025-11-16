@@ -95,7 +95,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   const canSeeManager = role ? ["manager","admin","owner"].includes(role) : false;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex justify-end">
       {/* Overlay */}
       <div
         className="absolute inset-0"
@@ -104,8 +104,8 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
         aria-hidden="true"
       ></div>
 
-      {/* Menu */}
-      <div className="relative w-80 bg-[color:var(--background)] shadow-2xl rounded-r-2xl border-r border-[color:var(--card-border)] p-4">
+      {/* Menu - slides from right */}
+      <div className="relative w-80 bg-[color:var(--background)] shadow-2xl rounded-l-2xl border-l border-[color:var(--card-border)] p-4 animate-slide-in-right">
         <div className="flex items-center justify-between p-4 border-b border-[color:var(--card-border)]">
           <Image
             src="/BizTool Logo.png"
