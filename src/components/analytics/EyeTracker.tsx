@@ -179,6 +179,43 @@ export function EyeTracker({
             console.warn("WebGazer start() failed", error);
           }
         }
+
+        // Position the webcam video in the drawer container
+        setTimeout(() => {
+          const video = document.getElementById('webgazerVideoFeed');
+          const canvas = document.getElementById('webgazerFaceOverlay');
+          const container = document.getElementById('webgazer-video-container');
+          
+          if (video && container) {
+            // Move video into container
+            container.appendChild(video);
+            
+            // Style the video to fit the container
+            video.style.position = 'absolute';
+            video.style.top = '0';
+            video.style.left = '0';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'cover';
+            video.style.borderRadius = '0.75rem'; // rounded-xl
+            video.style.transform = 'scaleX(-1)'; // Mirror the video
+          }
+
+          if (canvas && container) {
+            // Move canvas overlay into container
+            container.appendChild(canvas);
+            
+            // Style the canvas to overlay the video
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.borderRadius = '0.75rem'; // rounded-xl
+            canvas.style.transform = 'scaleX(-1)'; // Mirror the canvas
+            canvas.style.zIndex = '1'; // Above video
+          }
+        }, 100);
       } catch (error) {
         console.error("WebGazer failed to load", error);
       }

@@ -16,9 +16,7 @@ import {
   Zap
 } from "lucide-react";
 import React from "react";
-import EyeTracker from "@/components/analytics/EyeTracker";
-import CalibrationOverlay from "@/components/analytics/CalibrationOverlay";
-import EyeTrackingDebugPanel from "@/components/analytics/EyeTrackingDebugPanel";
+import { EyeTrackingDrawer } from "@/components/analytics/EyeTrackingDrawer";
 
 const enableEyeTracking = process.env.NEXT_PUBLIC_ENABLE_EYE_TRACKING === "true";
 
@@ -34,11 +32,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
-  const [predictionVisible, setPredictionVisible] = useState(false);
-  const [calibrationActive, setCalibrationActive] = useState(false);
-  const [debugPanelOpen, setDebugPanelOpen] = useState(false);
-  const [recording, setRecording] = useState(false);
-  const [sessionId, setSessionId] = useState<string>(() => generateSessionId());
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,41 +50,6 @@ export default function Home() {
       router.push("/login");
     }
   };
-
-  const handleRecordingChange = useCallback(async (next: boolean) => {
-    if (next) {
-      const newId = generateSessionId();
-      setSessionId(newId);
-      setRecording(true);
-      try {
-        await fetch(`/api/analytics/gaze?sessionId=${encodeURIComponent(newId)}`, {
-          method: "DELETE",
-        });
-      } catch (error) {
-        console.warn("Unable to clear previous gaze samples", error);
-      }
-    } else {
-      setRecording(false);
-      if (sessionId) {
-        try {
-          await fetch(`/api/analytics/gaze?sessionId=${encodeURIComponent(sessionId)}`, {
-            method: "DELETE",
-          });
-        } catch (error) {
-          console.warn("Unable to clear gaze session", error);
-        }
-      }
-    }
-  }, [sessionId]);
-
-  const handleCalibrationStart = useCallback(() => {
-    setPredictionVisible(true);
-    setCalibrationActive(true);
-  }, []);
-
-  const handleCalibrationFinish = useCallback(() => {
-    setCalibrationActive(false);
-  }, []);
 
 const modules = [
   {
@@ -145,40 +103,7 @@ const features = [
 
 return (
     <>
-      {enableEyeTracking ? (
-        <>
-          <EyeTracker
-            showPredictionPoints={predictionVisible}
-            captureSamples={recording}
-            sessionId={sessionId}
-          />
-          <CalibrationOverlay
-            active={calibrationActive}
-            onComplete={handleCalibrationFinish}
-            onCancel={handleCalibrationFinish}
-          />
-          {debugPanelOpen ? (
-            <EyeTrackingDebugPanel
-              predictionVisible={predictionVisible}
-              onPredictionVisibleChange={setPredictionVisible}
-              recording={recording}
-              onRecordingChange={handleRecordingChange}
-              onStartCalibration={handleCalibrationStart}
-              sessionId={sessionId}
-              onClose={() => setDebugPanelOpen(false)}
-            />
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="fixed bottom-4 right-4 z-[80]"
-              onClick={() => setDebugPanelOpen(true)}
-            >
-              Show analytics tools
-            </Button>
-          )}
-        </>
-      ) : null}
+      {enableEyeTracking && <EyeTrackingDrawer />}
       <main className="px-4 py-10 sm:px-6 lg:px-8 bg-[color:var(--background)] text-[color:var(--foreground)] min-h-[calc(100vh-56px)]">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6" style={{fontFamily:'var(--font-sans)'}}>

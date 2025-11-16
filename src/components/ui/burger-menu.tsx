@@ -19,6 +19,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   const [user, setUser] = useState<User | null>(null); // Updated type to match Supabase user object
   const [attendanceActive, setAttendanceActive] = useState<boolean>(false);
   const [role, setRole] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const supabase = createClient();
   const router = useRouter();
 
@@ -75,6 +76,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setIsClosing(false);
     } else {
       document.body.style.overflow = "";
     }
@@ -84,7 +86,15 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 300); // Match the slide-out animation duration
+  };
+
+  if (!isOpen && !isClosing) return null;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -98,14 +108,20 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Overlay */}
       <div
-        className="absolute inset-0"
-        style={{ backgroundColor: 'var(--overlay)' }}
-        onClick={onClose}
+        className="absolute inset-0 transition-opacity duration-300"
+        style={{ 
+          backgroundColor: 'var(--overlay)',
+          opacity: isClosing ? 0 : 1,
+          pointerEvents: isClosing ? 'none' : 'auto'
+        }}
+        onClick={handleClose}
         aria-hidden="true"
       ></div>
 
       {/* Menu - slides from right */}
-      <div className="relative w-80 bg-[color:var(--background)] shadow-2xl rounded-l-2xl border-l border-[color:var(--card-border)] p-4 animate-slide-in-right">
+      <div className={`relative w-80 bg-[color:var(--background)] shadow-2xl rounded-l-2xl border-l border-[color:var(--card-border)] p-4 ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
+        style={{ pointerEvents: isClosing ? 'none' : 'auto' }}
+      >
         <div className="flex items-center justify-between p-4 border-b border-[color:var(--card-border)]">
           <Image
             src="/BizTool Logo.png"
@@ -115,7 +131,7 @@ export function BurgerMenu({ isOpen, onClose }: BurgerMenuProps) {
             className="h-[80px] w-[250px]"
           />
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-[color:var(--foreground)] hover:text-[color:var(--muted)] focus:outline-none"
             aria-label="Close menu"
           >
