@@ -18,18 +18,18 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // Tenant context - try user_profiles first, fallback to tenant_memberships
-    let { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from("user_profiles")
       .select("tenant_id, first_name, last_name")
       .eq("id", user.id)
       .maybeSingle();
 
-    let tenantId = profile?.tenant_id ?? null;
+    let tenantId = profileData?.tenant_id ?? null;
     
     // Get name from user_metadata (set during registration) or user_profiles
     const userMetadataName = user.user_metadata?.name as string | undefined;
-    let firstName = profile?.first_name ?? '';
-    let lastName = profile?.last_name ?? '';
+    let firstName = profileData?.first_name ?? '';
+    let lastName = profileData?.last_name ?? '';
     
     // If user_profiles doesn't have name but user_metadata does, use it
     if ((!firstName || !lastName) && userMetadataName) {

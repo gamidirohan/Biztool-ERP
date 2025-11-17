@@ -83,7 +83,7 @@ Return ONLY valid JSON, no markdown formatting or additional text.`;
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          text += content.items.map((item: any) => item.str).join(' ') + '\n';
+          text += content.items.map((item) => ('str' in item ? item.str : '')).join(' ') + '\n';
         }
         
         extractedText = text;
@@ -113,7 +113,7 @@ Return ONLY valid JSON, no markdown formatting or additional text.`;
       try {
         const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         extractedData = JSON.parse(cleanedText);
-      } catch (parseError) {
+      } catch {
         console.error("Failed to parse Groq response:", text);
         return NextResponse.json(
           { error: "Failed to parse invoice data", details: text },
@@ -166,7 +166,7 @@ Return ONLY valid JSON, no markdown formatting or additional text.`;
       try {
         const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         extractedData = JSON.parse(cleanedText);
-      } catch (parseError) {
+      } catch {
         console.error("Failed to parse Groq response:", text);
         return NextResponse.json(
           { error: "Failed to parse invoice data", details: text },

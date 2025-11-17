@@ -53,8 +53,8 @@ export const SocialProofSection = () => {
 
       <div className="text-center">
         <p className="text-muted-foreground italic max-w-2xl mx-auto">
-          "Featured in leading business publications and recognized by industry experts 
-          as the go-to ERP solution for Indian MSMEs."
+          &quot;Featured in leading business publications and recognized by industry experts 
+          as the go-to ERP solution for Indian MSMEs.&quot;
         </p>
       </div>
     </section>

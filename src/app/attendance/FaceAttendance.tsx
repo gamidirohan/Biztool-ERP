@@ -10,7 +10,6 @@ type ModuleRow = { code: string; status: string };
 
 export default function FaceAttendance() {
   const supabase = createClient();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -165,7 +164,7 @@ export default function FaceAttendance() {
   }, [userId, tenantId, attendanceAllowed]);
 
   const enroll = useCallback(async () => {
-    setLoading(true); setError(null); setSuccess(null);
+    setError(null); setSuccess(null);
     try {
       if (!videoRef.current) {
         throw new Error("Camera not ready. Please refresh the page.");
@@ -195,13 +194,11 @@ export default function FaceAttendance() {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Enrollment failed";
       setError(message);
-    } finally {
-      setLoading(false);
     }
   }, [cameraReady]);
 
   const punch = useCallback(async (action: "check_in" | "check_out") => {
-    setLoading(true); setError(null); setSuccess(null);
+    setError(null); setSuccess(null);
     try {
       if (!videoRef.current) {
         throw new Error("Camera not ready. Please refresh the page.");
@@ -230,8 +227,6 @@ export default function FaceAttendance() {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Authentication failed";
       setError(message);
-    } finally {
-      setLoading(false);
     }
   }, [cameraReady]);
 

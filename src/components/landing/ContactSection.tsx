@@ -62,7 +62,7 @@ export const ContactSection = () => {
           </div>
           <p className="mb-8 text-muted-foreground lg:w-5/6">
             Have questions? Want to see a demo? Our team is here to help you find 
-            the perfect solution for your business. Reach out and we'll get back to you within 24 hours.
+            the perfect solution for your business. Reach out and we&apos;ll get back to you within 24 hours.
           </p>
 
           <div className="flex flex-col gap-4">

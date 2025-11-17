@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { 
   Settings, 
@@ -22,10 +21,10 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [_user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [_profile, setProfile] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [_theme, _setTheme] = useState<"light" | "dark" | "system">("system");
 
   useEffect(() => {
     const supabase = createClient();
@@ -65,7 +64,7 @@ export default function SettingsPage() {
       title: "Preferences",
       icon: Palette,
       items: [
-        { label: "Appearance", href: "/settings/appearance", icon: theme === "dark" ? Moon : theme === "light" ? Sun : Monitor },
+        { label: "Appearance", href: "/settings/appearance", icon: _theme === "dark" ? Moon : _theme === "light" ? Sun : Monitor },
         { label: "Notifications", href: "/settings/notifications", icon: Bell },
         { label: "Language & Region", href: "/settings/language", icon: Globe },
       ]

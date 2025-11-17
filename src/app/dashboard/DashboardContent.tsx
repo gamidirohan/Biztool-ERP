@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Clock, Settings, CreditCard, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight, User } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Settings, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MobileDashboard } from "@/components/ui/mobile-dashboard";
 import { DailyTasks } from "@/components/ui/daily-tasks";
@@ -491,7 +491,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {localModules.map(module => {
-                const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = { "layout-dashboard": LayoutDashboard, "calendar-check": CalendarCheck, users: Users, boxes: Boxes, "shield-check": ShieldCheck, "chart-line": ChartLine, clock: Clock };
+                const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = { "layout-dashboard": LayoutDashboard, "calendar-check": CalendarCheck, users: Users, boxes: Boxes, "shield-check": ShieldCheck, "chart-line": ChartLine };
                 const Icon = ICON_MAP[module.iconName] || LayoutDashboard;
                 
                 return (

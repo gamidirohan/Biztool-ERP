@@ -9,6 +9,7 @@ import { PricingSection } from "@/components/landing/PricingSection";
 import { FAQSection } from "@/components/landing/FAQSection";
 import { CTASection } from "@/components/landing/CTASection";
 import { FooterSection } from "@/components/landing/FooterSection";
+import { EyeTrackingDrawer } from "@/components/analytics/EyeTrackingDrawer";
 
 export default function Home() {
   return (
@@ -26,6 +27,7 @@ export default function Home() {
         <CTASection />
       </main>
       <FooterSection />
+      <EyeTrackingDrawer />
     </div>
   );
 }

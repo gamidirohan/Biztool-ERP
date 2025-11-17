@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Camera, X, FlipHorizontal, Loader2 } from "lucide-react";
+import { Camera, X, FlipHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +10,6 @@ export default function ScanInvoicePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -123,15 +122,10 @@ export default function ScanInvoicePage() {
       <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-center items-center bg-gradient-to-t from-black/60 to-transparent">
         <Button
           onClick={capturePhoto}
-          disabled={loading}
           size="lg"
           className="h-16 w-16 rounded-full bg-white hover:bg-gray-200 text-black"
         >
-          {loading ? (
-            <Loader2 className="h-8 w-8 animate-spin" />
-          ) : (
-            <Camera className="h-8 w-8" />
-          )}
+          <Camera className="h-8 w-8" />
         </Button>
       </div>
 

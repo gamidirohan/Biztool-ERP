@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { TaskManager } from "@/components/ui/task-manager";
 import { DonutChart } from "@/components/ui/donut-chart";
 import { TrendChart } from "@/components/ui/trend-chart";
-import { Users, UserCheck, Clock } from "lucide-react";
+import { Users, UserCheck } from "lucide-react";
 
 export default function HRPage() {
   const [userRole, setUserRole] = useState<string | null>(null);

@@ -101,8 +101,8 @@ export function DonutChart({
                 verticalAlign="bottom" 
                 height={36}
                 wrapperStyle={{ fontSize: '12px' }}
-                formatter={(value, entry: any) => {
-                  const percentage = ((entry.value / total) * 100).toFixed(0);
+                formatter={(value, entry) => {
+                  const percentage = ((Number(entry.value) / total) * 100).toFixed(0);
                   return `${value} (${percentage}%)`;
                 }}
               />
