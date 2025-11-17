@@ -15,18 +15,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile and role
-    const { data: profile } = await supabase
+    // Get user profile and role - try user_profiles first, then tenant_memberships
+    const profileResult = await supabase
       .from('user_profiles')
       .select('role, tenant_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profile?.tenant_id) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 400 });
+    let tenantId = profileResult.data?.tenant_id;
+    let role = profileResult.data?.role;
+
+    console.log('Tasks GET - User profile lookup:', { userId: user.id, tenantId, role, hasProfile: !!profileResult.data });
+
+    // Fallback to tenant_memberships if user_profiles doesn't have the data
+    if (!tenantId || !role) {
+      const membershipResult = await supabase
+        .from('tenant_memberships')
+        .select('role, tenant_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      
+      console.log('Tasks GET - Membership lookup:', { 
+        userId: user.id, 
+        membership: membershipResult.data,
+        error: membershipResult.error,
+        count: membershipResult.data ? 1 : 0
+      });
+      
+      if (membershipResult.error) {
+        console.error('Tasks GET - Membership query error:', membershipResult.error);
+      }
+      
+      tenantId = tenantId || membershipResult.data?.tenant_id;
+      role = role || membershipResult.data?.role;
     }
 
-    const isAdmin = ['owner', 'admin', 'manager'].includes(profile.role);
+    if (!tenantId) {
+      console.warn('Tasks GET - No tenant found for user:', user.id);
+      // Return empty tasks instead of error for better UX
+      return NextResponse.json({ tasks: [], message: 'No organization found. Please join or create an organization first.' });
+    }
+
+    const isAdmin = ['owner', 'admin', 'manager'].includes(role || 'employee');
 
     let query = supabase
       .from('tasks')
@@ -43,11 +74,9 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at,
         assigned_to,
-        assigned_by,
-        assigned_user:user_profiles!tasks_assigned_to_fkey(first_name, last_name),
-        assigned_by_user:user_profiles!tasks_assigned_by_fkey(first_name, last_name)
+        assigned_by
       `)
-      .eq('tenant_id', profile.tenant_id);
+      .eq('tenant_id', tenantId);
 
     // If not admin, only show tasks assigned to current user
     if (!isAdmin) {
@@ -95,18 +124,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile and role
-    const { data: profile } = await supabase
+    // Get user profile and role - try user_profiles first, then tenant_memberships
+    const profileResult = await supabase
       .from('user_profiles')
       .select('role, tenant_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profile?.tenant_id) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 400 });
+    let tenantId = profileResult.data?.tenant_id;
+    let role = profileResult.data?.role;
+
+    console.log('Tasks POST - User profile lookup:', { userId: user.id, tenantId, role, hasProfile: !!profileResult.data });
+
+    // Fallback to tenant_memberships if user_profiles doesn't have the data
+    if (!tenantId || !role) {
+      const membershipResult = await supabase
+        .from('tenant_memberships')
+        .select('role, tenant_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      
+      console.log('Tasks POST - Membership lookup:', { userId: user.id, membership: membershipResult.data });
+      
+      tenantId = tenantId || membershipResult.data?.tenant_id;
+      role = role || membershipResult.data?.role;
     }
 
-    const isAdmin = ['owner', 'admin', 'manager'].includes(profile.role);
+    if (!tenantId) {
+      console.warn('Tasks POST - No tenant found for user:', user.id);
+      return NextResponse.json({ error: 'No organization found. Please join or create an organization first.' }, { status: 400 });
+    }
+
+    const isAdmin = ['owner', 'admin', 'manager'].includes(role || 'employee');
 
     const body = await request.json();
     const { title, description, assigned_to, priority = 'medium', due_date, is_daily_task = true } = body;
@@ -127,9 +177,21 @@ export async function POST(request: NextRequest) {
       .from('user_profiles')
       .select('id, tenant_id')
       .eq('id', finalAssignedTo)
-      .single();
+      .maybeSingle();
 
-    if (!assignedUser || assignedUser.tenant_id !== profile.tenant_id) {
+    // Fallback to tenant_memberships if user_profiles doesn't exist
+    if (!assignedUser) {
+      const { data: assignedMember } = await supabase
+        .from('tenant_memberships')
+        .select('user_id, tenant_id')
+        .eq('user_id', finalAssignedTo)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (!assignedMember) {
+        return NextResponse.json({ error: 'Invalid assigned user' }, { status: 400 });
+      }
+    } else if (assignedUser.tenant_id !== tenantId) {
       return NextResponse.json({ error: 'Invalid assigned user' }, { status: 400 });
     }
 
@@ -137,7 +199,7 @@ export async function POST(request: NextRequest) {
     const { data: maxSortOrder } = await supabase
       .from('tasks')
       .select('sort_order')
-      .eq('tenant_id', profile.tenant_id)
+      .eq('tenant_id', tenantId)
       .eq('assigned_to', finalAssignedTo)
       .eq('is_daily_task', is_daily_task)
       .order('sort_order', { ascending: false })
@@ -148,7 +210,7 @@ export async function POST(request: NextRequest) {
     const { data: task, error } = await supabase
       .from('tasks')
       .insert({
-        tenant_id: profile.tenant_id,
+        tenant_id: tenantId,
         title: title.trim(),
         description: description?.trim(),
         assigned_to: finalAssignedTo,

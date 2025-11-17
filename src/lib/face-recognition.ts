@@ -65,15 +65,52 @@ export async function ensureCamera(video: HTMLVideoElement): Promise<MediaStream
     throw new Error("Camera not available in this environment");
   }
   
-  const stream = await navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: "user" }, 
-    audio: false 
-  });
+  // Stop any existing stream first
+  if (video.srcObject) {
+    const existingStream = video.srcObject as MediaStream;
+    existingStream.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  }
   
-  video.srcObject = stream;
-  await video.play();
-  
-  return stream;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, 
+      audio: false 
+    });
+    
+    // Check if video element is still in the DOM before attaching
+    if (!video.isConnected) {
+      stream.getTracks().forEach(track => track.stop());
+      throw new Error("Video element was removed from DOM");
+    }
+    
+    video.srcObject = stream;
+    
+    // Wait for video to be ready with timeout
+    await Promise.race([
+      new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          video.play()
+            .then(() => resolve())
+            .catch(reject);
+        };
+        video.onerror = () => reject(new Error("Video element error"));
+      }),
+      new Promise<void>((_, reject) => 
+        setTimeout(() => reject(new Error("Camera initialization timeout")), 10000)
+      )
+    ]);
+    
+    return stream;
+  } catch (error) {
+    // Clean up on error
+    if (video.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+    throw error;
+  }
 }
 
 // ============================================================================

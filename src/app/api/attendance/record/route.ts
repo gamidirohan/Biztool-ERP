@@ -17,37 +17,46 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Tenant context
+    // Tenant context - try user_profiles first, fallback to tenant_memberships
     let { data: profile } = await supabase
       .from("user_profiles")
       .select("tenant_id, first_name, last_name")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profile) {
-      // Create profile if missing (for testing)
-      const { data: newProf, error: profErr } = await supabase
-        .from("user_profiles")
-        .insert({
-          id: user.id,
-          first_name: 'Test',
-          last_name: 'User',
-          tenant_id: null, // Will need to set tenant
-          role: 'employee',
-        })
-        .select("tenant_id, first_name, last_name")
-        .single();
-      if (profErr) return NextResponse.json({ error: profErr.message }, { status: 500 });
-      profile = newProf;
+    let tenantId = profile?.tenant_id ?? null;
+    
+    // Get name from user_metadata (set during registration) or user_profiles
+    const userMetadataName = user.user_metadata?.name as string | undefined;
+    let firstName = profile?.first_name ?? '';
+    let lastName = profile?.last_name ?? '';
+    
+    // If user_profiles doesn't have name but user_metadata does, use it
+    if ((!firstName || !lastName) && userMetadataName) {
+      const nameParts = userMetadataName.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
     }
 
-    if (!profile?.tenant_id) return NextResponse.json({ error: "No tenant - please join or create a tenant first" }, { status: 400 });
+    // Fallback to tenant_memberships if no profile
+    if (!tenantId) {
+      const { data: membership } = await supabase
+        .from("tenant_memberships")
+        .select("tenant_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      tenantId = membership?.tenant_id ?? null;
+    }
+
+    if (!tenantId) {
+      return NextResponse.json({ error: "No tenant - please join or create a tenant first" }, { status: 400 });
+    }
 
     // Verify attendance module is active for tenant
     const { data: mod } = await supabase
       .from("tenant_effective_modules")
       .select("status")
-      .eq("tenant_id", profile.tenant_id)
+      .eq("tenant_id", tenantId)
       .eq("code", "attendance")
       .maybeSingle();
     let active = !!mod && ["active", "trial", "subscribed"].includes((mod as { status: string }).status);
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
       const { data: subs } = await supabase
         .from("tenant_module_subscriptions")
         .select("status")
-        .eq("tenant_id", profile.tenant_id)
+        .eq("tenant_id", tenantId)
         .eq("module_code", "attendance")
         .in("status", ["active", "trial"]);
       active = Boolean(subs && subs.length > 0);
@@ -67,18 +76,22 @@ export async function POST(req: NextRequest) {
     let { data: employee } = await supabase
       .from("employees")
       .select("id")
-      .eq("tenant_id", profile.tenant_id)
+      .eq("tenant_id", tenantId)
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!employee) {
       // Create employee profile if missing (for testing)
+      const employeeName = firstName 
+        ? `${firstName} ${lastName}`.trim()
+        : user.user_metadata?.name || user.email?.split('@')[0] || 'Employee';
+      
       const { data: newEmp, error: createErr } = await supabase
         .from("employees")
         .insert({
-          tenant_id: profile.tenant_id,
+          tenant_id: tenantId,
           user_id: user.id,
-          name: profile.first_name + ' ' + profile.last_name,
+          name: employeeName,
           email: user.email,
         })
         .select("id")
@@ -94,7 +107,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await supabase
       .from("face_embeddings")
       .select("id")
-      .eq("tenant_id", profile.tenant_id)
+      .eq("tenant_id", tenantId)
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -102,7 +115,7 @@ export async function POST(req: NextRequest) {
     if (action === "enroll" || !existing) {
       // Use RPC to upsert into pgvector column
       const { error: upErr } = await supabase.rpc("upsert_face_embedding", {
-        p_tenant: profile.tenant_id,
+        p_tenant: tenantId,
         p_user: user.id,
         p_vec: embedding,
         p_label: null,
@@ -113,7 +126,7 @@ export async function POST(req: NextRequest) {
       if (action === "enroll") return NextResponse.json({ ok: true, enrolled: true });
       // For first-time check-in, proceed to write attendance directly
       const { error: insErr } = await supabase.from("attendance_records").insert({
-        tenant_id: profile.tenant_id,
+        tenant_id: tenantId,
         employee_id: employee.id,
         action: "check_in",
         is_manual_entry: false,
@@ -125,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     // Compute distance to user's own embedding first
     const { data: distRows, error: distErr } = await supabase.rpc("face_distance", {
-      p_tenant: profile.tenant_id,
+      p_tenant: tenantId,
       p_user: user.id,
       p_q: embedding,
     });
@@ -138,7 +151,7 @@ export async function POST(req: NextRequest) {
     // If own distance too high, run 1-NN within tenant and ensure best match is the same user
     if (!accepted) {
       const { data: matches, error: matchErr } = await supabase.rpc("match_face", {
-        tenant: profile.tenant_id,
+        tenant: tenantId,
         q: embedding,
         k: 1,
       });
@@ -154,7 +167,7 @@ export async function POST(req: NextRequest) {
 
     // Insert attendance record
     const { error: insErr } = await supabase.from("attendance_records").insert({
-      tenant_id: profile.tenant_id,
+      tenant_id: tenantId,
       employee_id: employee.id,
       action,
       is_manual_entry: false,

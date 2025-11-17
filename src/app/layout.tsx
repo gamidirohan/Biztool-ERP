@@ -3,8 +3,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
-import { AppHeader } from "@/components/ui/app-header";
-import BreadcrumbWrapper from "@/components/ui/breadcrumb-wrapper";
+import { ConditionalHeader } from "@/components/ConditionalHeader";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -42,13 +41,7 @@ export default function RootLayout({
           </Script>
         ) : null}
         <ThemeProvider>
-          {/* AppHeader is hidden on mobile (< 768px) as dashboard and other pages have their own mobile layouts */}
-          <div className="hidden md:block">
-            <AppHeader />
-          </div>
-          <div className="hidden md:block">
-            <BreadcrumbWrapper />
-          </div>
+          <ConditionalHeader />
           {children}
         </ThemeProvider>
       </body>

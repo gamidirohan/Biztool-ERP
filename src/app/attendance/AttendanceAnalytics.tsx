@@ -43,19 +43,36 @@ export default function AttendanceAnalytics() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Try user_profiles first, fallback to tenant_memberships
+      let tenantId: string | null = null;
+      
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("tenant_id")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (!profile?.tenant_id) return;
+      tenantId = profile?.tenant_id ?? null;
+
+      if (!tenantId) {
+        const { data: membership } = await supabase
+          .from("tenant_memberships")
+          .select("tenant_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        tenantId = membership?.tenant_id ?? null;
+      }
+
+      if (!tenantId) {
+        setError("No organization found");
+        return;
+      }
 
       // Get all employees in the tenant
       const { data: employeesData } = await supabase
         .from("employees")
-        .select("id, first_name, last_name")
-        .eq("tenant_id", profile.tenant_id);
+        .select("id, name")
+        .eq("tenant_id", tenantId);
 
       if (!employeesData) return;
 
@@ -70,7 +87,7 @@ export default function AttendanceAnalytics() {
       const { data: todayRecords } = await supabase
         .from("attendance_records")
         .select("employee_id, action, created_at")
-        .eq("tenant_id", profile.tenant_id)
+        .eq("tenant_id", tenantId)
         .gte("created_at", startOfDay.toISOString())
         .lte("created_at", endOfDay.toISOString())
         .order("created_at", { ascending: true });
@@ -84,7 +101,7 @@ export default function AttendanceAnalytics() {
       employeesData.forEach(emp => {
         employeeMap.set(emp.id, {
           id: emp.id,
-          name: `${emp.first_name} ${emp.last_name}`,
+          name: emp.name,
           status: 'absent'
         });
       });
@@ -118,7 +135,7 @@ export default function AttendanceAnalytics() {
 
           employeeMap.set(emp.id, {
             id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
+            name: emp.name,
             status,
             checkInTime: new Date(checkInTime).toLocaleTimeString(),
             checkOutTime: checkOuts.get(emp.id) ? new Date(checkOuts.get(emp.id)!).toLocaleTimeString() : undefined
@@ -138,7 +155,7 @@ export default function AttendanceAnalytics() {
       const { data: yesterdayRecords } = await supabase
         .from("attendance_records")
         .select("employee_id, action")
-        .eq("tenant_id", profile.tenant_id)
+        .eq("tenant_id", tenantId)
         .gte("created_at", yesterday.toISOString())
         .lte("created_at", yesterdayEnd.toISOString());
 

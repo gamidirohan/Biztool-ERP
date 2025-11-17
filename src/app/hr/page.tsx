@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TaskManager } from "@/components/ui/task-manager";
-import { Users } from "lucide-react";
+import { DonutChart } from "@/components/ui/donut-chart";
+import { TrendChart } from "@/components/ui/trend-chart";
+import { Users, UserCheck, Clock } from "lucide-react";
 
 export default function HRPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -84,6 +86,43 @@ export default function HRPage() {
           </p>
         </div>
 
+        {/* Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Employee Distribution */}
+          <DonutChart
+            title="Department Distribution"
+            icon={<Users className="h-4 w-4" />}
+            data={[
+              { name: 'Engineering', value: 12, color: 'hsl(var(--chart-1))' },
+              { name: 'Sales', value: 8, color: 'hsl(var(--chart-2))' },
+              { name: 'Marketing', value: 6, color: 'hsl(var(--chart-3))' },
+              { name: 'HR', value: 3, color: 'hsl(var(--chart-4))' },
+              { name: 'Operations', value: 5, color: 'hsl(var(--chart-5))' },
+            ]}
+            height={280}
+          />
+
+          {/* Attendance Trend */}
+          <TrendChart
+            title="Monthly Attendance Rate"
+            icon={<UserCheck className="h-4 w-4" />}
+            data={[
+              { name: 'Jan', rate: 92, target: 95 },
+              { name: 'Feb', rate: 94, target: 95 },
+              { name: 'Mar', rate: 91, target: 95 },
+              { name: 'Apr', rate: 96, target: 95 },
+              { name: 'May', rate: 95, target: 95 },
+              { name: 'Jun', rate: 97, target: 95 },
+            ]}
+            dataKeys={[
+              { key: 'rate', name: 'Attendance Rate', color: 'hsl(var(--chart-2))' },
+              { key: 'target', name: 'Target', color: 'hsl(var(--muted-foreground))' },
+            ]}
+            height={280}
+          />
+        </div>
+
+        {/* Task Manager */}
         <TaskManager />
       </div>
     </div>

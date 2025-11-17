@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -14,7 +14,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const msg = searchParams.get('message');
+    if (msg) setMessage(msg);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +56,10 @@ export default function LoginPage() {
         return;
       }
     }
-    router.push("/dashboard");
+    
+    // Check for next parameter to redirect after login
+    const next = searchParams.get('next');
+    router.push(next || "/dashboard");
   };
 
   return (
@@ -89,6 +99,11 @@ export default function LoginPage() {
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
             <p className="text-sm text-[color:var(--foreground)]/60">Enter your credentials to access your dashboard.</p>
+            {message && (
+              <div className="mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">{message}</p>
+              </div>
+            )}
           </div>
           <div className="rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] shadow-sm p-6 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--card-bg)]/90 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -151,7 +166,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 focus-visible:outline-none transition"
+                className="w-full h-10 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:outline-none transition"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </Button>

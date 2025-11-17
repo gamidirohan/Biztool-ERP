@@ -1,198 +1,31 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import {
-  Building2,
-  Store,
-  Clock,
-  Users,
-  TrendingUp,
-  Shield,
-  Smartphone,
-  Zap
-} from "lucide-react";
-import React from "react";
-import { EyeTrackingDrawer } from "@/components/analytics/EyeTrackingDrawer";
-
-const enableEyeTracking = process.env.NEXT_PUBLIC_ENABLE_EYE_TRACKING === "true";
+import { LandingNavbar } from "@/components/landing/LandingNavbar";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { BenefitsSection } from "@/components/landing/BenefitsSection";
+import { ModulesSection } from "@/components/landing/ModulesSection";
+import { SocialProofSection } from "@/components/landing/SocialProofSection";
+import { TestimonialSection } from "@/components/landing/TestimonialSection";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { CTASection } from "@/components/landing/CTASection";
+import { FooterSection } from "@/components/landing/FooterSection";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const supabase = createClient();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-      setLoading(false);
-    };
-    
-    checkAuth();
-  }, [supabase]);
-
-  const handleStartNow = () => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/login");
-    }
-  };
-
-const modules = [
-  {
-    title: "Manager",
-    description: "Comprehensive business management dashboard with real-time analytics and reporting tools.",
-    icon: <Building2 className="h-10 w-10" style={{ color: 'var(--module-blue)' }} />,
-    href: "/manager"
-  },
-  {
-    title: "Store Module",
-    description: "Complete inventory management, sales tracking, and customer relationship tools.",
-    icon: <Store className="h-10 w-10" style={{ color: 'var(--module-green)' }} />,
-    href: "/store"
-  },
-  {
-    title: "Attendance Module",
-    description: "Employee time tracking, leave management, and attendance analytics.",
-    icon: <Clock className="h-10 w-10" style={{ color: 'var(--module-purple)' }} />,
-    href: "/attendance"
-  },
-  {
-    title: "HR Module",
-    description: "Human resources management, payroll, recruitment, and employee development.",
-    icon: <Users className="h-10 w-10" style={{ color: 'var(--module-orange)' }} />,
-    href: "/hr"
-  }
-];
-
-const features = [
-  {
-    icon: <Smartphone className="h-6 w-6" style={{ color: 'var(--module-blue)' }} />,
-    title: "Mobile First Design",
-    description: "Optimized for mobile devices with responsive design"
-  },
-  {
-    icon: <TrendingUp className="h-6 w-6" style={{ color: 'var(--module-green)' }} />,
-    title: "Growth Focused",
-    description: "Built to scale with your business needs"
-  },
-  {
-    icon: <Shield className="h-6 w-6" style={{ color: 'var(--module-purple)' }} />,
-    title: "Secure & Reliable",
-    description: "Enterprise-grade security and data protection"
-  },
-  {
-    icon: <Zap className="h-6 w-6" style={{ color: 'var(--warning)' }} />,
-    title: "Lightning Fast",
-    description: "Optimized performance for quick operations"
-  }
-];
-
-return (
-    <>
-      {enableEyeTracking && <EyeTrackingDrawer />}
-      <main className="px-4 py-10 sm:px-6 lg:px-8 bg-[color:var(--background)] text-[color:var(--foreground)] min-h-[calc(100vh-56px)]">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6" style={{fontFamily:'var(--font-sans)'}}>
-            All your business on
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--accent)]"> one platform.</span>
-          </h1>
-          <p className="text-base sm:text-lg mb-8" style={{fontFamily:'var(--font-sans)'}}>Mobile-first ERP & CRM for MSMEs. Simple, efficient, and affordable.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-            <Button 
-              onClick={handleStartNow}
-              disabled={loading}
-              className="bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white font-semibold px-6 py-3 rounded-lg shadow cursor-pointer" 
-              style={{fontFamily:'var(--font-sans)'}}>
-              {loading ? "Loading..." : isLoggedIn ? "Go to Dashboard" : "Start Now"}
-            </Button>
-          </div>
-        </div>
-        {/* Features */}
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
-          {features.map((feature, i) => (
-            <div
-              key={i}
-              className="rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow text-[color:var(--foreground)]"
-              style={{ fontFamily: 'var(--font-sans)' }}>
-              <div className="flex items-center gap-3 p-5 min-h-[96px]">
-                <span className="flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[color:var(--muted)]">
-                  {React.cloneElement(feature.icon, { className: "h-5 w-5 sm:h-6 sm:w-6 text-[color:var(--primary)]" })}
-                </span>
-                <div>
-                  <div className="font-semibold text-[color:var(--foreground)] text-base sm:text-lg leading-tight">
-                    {feature.title}
-                  </div>
-                  <div className="text-xs sm:text-sm">
-                    {feature.description}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Modules */}
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {modules.map((mod, i) => (
-            <Link href={mod.href} key={i} className="block rounded-xl bg-[color:var(--card-bg)] border border-[color:var(--card-border)] shadow p-6 transition hover:shadow-lg text-[color:var(--foreground)] hover:bg-[color:var(--button-hover-bg)] hover:text-[color:var(--button-hover-text)]" style={{fontFamily:'var(--font-sans)'}}>
-              <div className="flex items-center gap-4 mb-2">
-                {mod.icon}
-                <div className="font-semibold text-[color:var(--foreground)]">{mod.title}</div>
-              </div>
-              <div className="text-sm">{mod.description}</div>
-            </Link>
-          ))}
-        </div>
+  return (
+    <div className="flex min-h-screen flex-col overflow-x-hidden w-full">
+      <LandingNavbar />
+      <main className="flex-1 pt-16 w-full">
+        <HeroSection />
+        <SocialProofSection />
+        <FeaturesSection />
+        <BenefitsSection />
+        <ModulesSection />
+        <TestimonialSection />
+        <PricingSection />
+        <FAQSection />
+        <CTASection />
       </main>
-      {/* Footer */}
-      <footer className="bg-[color:var(--footer-bg)] text-[color:var(--footer-text)] px-4 py-12 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Building2 className="h-8 w-8" style={{ color: 'var(--module-blue)' }} />
-                <span className="text-2xl font-bold">BizTool</span>
-              </div>
-              <p className="text-[color:var(--footer-text-muted)]">
-                Streamline your business operations with our comprehensive ERP & CRM solution.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
-                <li><Link href="/tutorials" className="hover:text-[color:var(--footer-text)] transition">Tutorials</Link></li>
-                <li><Link href="/documentation" className="hover:text-[color:var(--footer-text)] transition">Documentation</Link></li>
-                <li><Link href="/forum" className="hover:text-[color:var(--footer-text)] transition">Forum</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Services</h3>
-              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
-                <li><Link href="/hosting" className="hover:text-[color:var(--footer-text)] transition">Hosting</Link></li>
-                <li><Link href="/support" className="hover:text-[color:var(--footer-text)] transition">Support</Link></li>
-                <li><Link href="/custom" className="hover:text-[color:var(--footer-text)] transition">Custom Development</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">About Us</h3>
-              <ul className="space-y-2 text-[color:var(--footer-text-muted)]">
-                <li><Link href="/company" className="hover:text-[color:var(--footer-text)] transition">Our Company</Link></li>
-                <li><Link href="/contact" className="hover:text-[color:var(--footer-text)] transition">Contact Us</Link></li>
-                <li><Link href="/careers" className="hover:text-[color:var(--footer-text)] transition">Careers</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-[color:var(--border)] mt-8 pt-8 text-center text-[color:var(--footer-text-muted)]">
-            <p>&copy; 2025 BizTool. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </>
+      <FooterSection />
+    </div>
   );
 }

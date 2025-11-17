@@ -323,7 +323,7 @@ export default function RegisterPage() {
               {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
               <Button
                 type="submit"
-                className="w-full h-10 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 focus-visible:outline-none transition"
+                className="w-full h-10 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:outline-none transition"
               >
                 {inviteToken ? 'Join Team' : 'Create Tenant'}
               </Button>

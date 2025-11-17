@@ -20,6 +20,7 @@ export function DailyTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,15 +30,33 @@ export function DailyTasks() {
   const loadTasks = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setMessage(null);
       const response = await fetch('/api/tasks?daily_only=true');
-      if (!response.ok) {
-        throw new Error('Failed to load tasks');
-      }
+      
       const data = await response.json();
+      
+      // Handle non-error messages (like "no organization found")
+      if (data.message && !response.ok) {
+        setMessage(data.message);
+        setTasks([]);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
+      
       setTasks(data.tasks || []);
+      
+      // Set informational message if returned
+      if (data.message) {
+        setMessage(data.message);
+      }
     } catch (err) {
       console.error('Error loading tasks:', err);
-      setError('Failed to load tasks');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load tasks';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -191,7 +210,14 @@ export function DailyTasks() {
         </Button>
       </div>
 
-      {pendingTasks.length === 0 && completedTasks.length === 0 && (
+      {/* Show informational message if present */}
+      {message && !error && (
+        <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-sm">
+          {message}
+        </div>
+      )}
+
+      {pendingTasks.length === 0 && completedTasks.length === 0 && !message && (
         <div className="text-center py-12 border border-dashed border-[color:var(--card-border)] rounded-lg">
           <CheckCircle className="h-12 w-12 mx-auto mb-4 text-[color:var(--muted-foreground)]" />
           <p className="text-lg font-medium mb-2">No tasks yet</p>

@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
               </div>
               {message && <p className="text-sm text-green-700 dark:text-green-400" role="status">{message}</p>}
               {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
-              <Button type="submit" disabled={loading} className="w-full h-10 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white text-sm font-medium">
+              <Button type="submit" disabled={loading} className="w-full h-10 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium">
                 {loading ? "Updating…" : "Update password"}
               </Button>
             </form>

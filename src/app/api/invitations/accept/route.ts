@@ -44,19 +44,60 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email mismatch' }, { status: 400 });
     }
 
-    // Upsert profile (only set role if not owner/manager/admin already)
-    await supabase.from('user_profiles').upsert({
-      id: user.id,
-      tenant_id: invite.tenant_id,
-      role: invite.role,
-    });
-
+    // Create tenant membership (this is the primary source of truth)
     const { error: memErr } = await supabase.from('tenant_memberships').upsert({
       tenant_id: invite.tenant_id,
       user_id: user.id,
       role: invite.role,
+    }, {
+      onConflict: 'tenant_id,user_id'
     });
-    if (memErr) return NextResponse.json({ error: memErr.message }, { status: 400 });
+    if (memErr) {
+      console.error('Failed to create tenant membership:', memErr);
+      return NextResponse.json({ error: memErr.message }, { status: 400 });
+    }
+
+    // Try to update user_profiles if it exists, but don't fail if it doesn't (RLS protection)
+    // This is optional since tenant_memberships is the source of truth
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    if (existingProfile) {
+      await supabase
+        .from('user_profiles')
+        .update({
+          tenant_id: invite.tenant_id,
+          role: invite.role,
+        })
+        .eq('id', user.id);
+    }
+
+    // Create employee record if role is employee (needed for attendance, payroll, etc.)
+    if (invite.role === 'employee') {
+      const { data: existingEmployee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('tenant_id', invite.tenant_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!existingEmployee) {
+        // Get user metadata for name
+        const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Employee';
+        
+        await supabase
+          .from('employees')
+          .insert({
+            tenant_id: invite.tenant_id,
+            user_id: user.id,
+            name: userName,
+            email: user.email,
+          });
+      }
+    }
 
     // Best-effort mark accepted if column exists; otherwise delete invite to prevent reuse
     const admin = createServiceRoleClient();

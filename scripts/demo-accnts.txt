@@ -29,3 +29,6 @@ Users:
 - rivax23988@lhory.com | role=n/a | tenant=n/a | employee=no
 - vomen49665@mytaemin.com | role=n/a | tenant=n/a | employee=no
 - rohangamidi@gmail.com | role=n/a | tenant=n/a | employee=no
+- xepih70771@canvect.com | role=employee | tenant = n/a | employee=yes
+
+Company1 - Employee - 

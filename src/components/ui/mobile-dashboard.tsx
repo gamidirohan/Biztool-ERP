@@ -137,11 +137,6 @@ export function MobileDashboard({ user, profile, effectiveRole, modules = [] }: 
       href: "#invite-action"
     }] : []),
     {
-      icon: "modules",
-      title: "Modules",
-      href: "/modules"
-    },
-    {
       icon: "settings",
       title: "Settings",
       href: "/settings"
@@ -149,7 +144,7 @@ export function MobileDashboard({ user, profile, effectiveRole, modules = [] }: 
     ...(privileged ? [{
       icon: "roles",
       title: "Manage roles",
-      href: "/roles"
+      href: "/hr"
     }] : []),
     ...(effectiveRole === "owner" ? [{
       icon: "billing",
@@ -210,6 +205,8 @@ export function MobileDashboard({ user, profile, effectiveRole, modules = [] }: 
           />
           <InsightsSection salesTrend={salesTrend} />
         </main>
+        {/* Add padding for fixed bottom navigation */}
+        <div className="h-20" />
       </div>
       <MobileBottomNavigation />
     </div>

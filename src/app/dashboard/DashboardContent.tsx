@@ -2,10 +2,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Clock, Settings, CreditCard, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Users, Boxes, ShieldCheck, ChartLine, Clock, Settings, CreditCard, CheckCircle, Loader2, Plus, Mail, X, Star, ArrowRight, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MobileDashboard } from "@/components/ui/mobile-dashboard";
 import { DailyTasks } from "@/components/ui/daily-tasks";
+import { RevenueChart } from "@/components/ui/revenue-chart";
+import { AttendanceChart } from "@/components/ui/attendance-chart";
 
 interface ModuleDef { id: string; name: string; description: string; iconName: string; status: string; route: string; sortOrder?: number }
 interface PendingInvite { id: string; email: string; role: string; created_at: string; expires_at: string }
@@ -316,24 +318,24 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
         {/* Header / Welcome */}
         <section aria-labelledby="dashboard-welcome" className="mb-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
+              <div>
               <div className="flex items-center gap-3 mb-1">
                 <h1 id="dashboard-welcome" className="text-2xl font-bold tracking-tight">Welcome back, {displayName}!</h1>
-                <span className="inline-flex items-center rounded-full border border-[color:var(--card-border)] bg-[color:var(--card-bg)] px-2 py-0.5 text-xs text-[color:var(--foreground)]/70 capitalize" aria-label={`Role: ${effectiveRole}`}>{effectiveRole}</span>
+                <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 capitalize" aria-label={`Role: ${effectiveRole}`}>{effectiveRole}</span>
               </div>
               <p className="text-sm text-[color:var(--foreground)]/70">Your central hub for BizTool modules & account actions.</p>
             </div>
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-2 mt-1" aria-label="Quick actions">
               {privileged && (
-                <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 rounded-md border border-[color:var(--card-border)] bg-[color:var(--card-bg)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--card-bg)]/70 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40">
+                <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-xs font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 shadow-sm transition">
                   <Mail className="h-4 w-4" /> Invite User
                 </button>
               )}
-              <button onClick={()=>router.refresh()} className="inline-flex items-center gap-2 rounded-md border border-[color:var(--card-border)] bg-[color:var(--card-bg)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--card-bg)]/70 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40">
+              <button onClick={()=>router.refresh()} className="inline-flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/40 transition">
                 <ArrowRight className="h-4 w-4" /> Refresh
               </button>
-              <button className="inline-flex items-center gap-2 rounded-md border border-[color:var(--card-border)] bg-[color:var(--card-bg)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--card-bg)]/70 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40" disabled>
+              <button className="inline-flex items-center gap-2 rounded-md border border-[color:var(--card-border)] bg-[color:var(--card-bg)] px-4 py-2 text-xs font-medium hover:bg-[color:var(--card-bg)]/70 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/40 opacity-60" disabled>
                 <Star className="h-4 w-4" /> Favorites (soon)
               </button>
             </div>
@@ -351,26 +353,26 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
-              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Active Users</span><Users className="h-4 w-4" /></div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Active Users</span><Users className="h-4 w-4 text-blue-500" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {orgStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : orgStats?.activeUsers ?? '–'}
                 </div>
               </div>
-              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Active Modules</span><LayoutDashboard className="h-4 w-4" /></div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Active Modules</span><LayoutDashboard className="h-4 w-4 text-blue-500" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {orgStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : orgStats?.activeModules ?? '–'}
                 </div>
               </div>
-              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Pending Invites</span><Mail className="h-4 w-4" /></div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Pending Invites</span><Mail className="h-4 w-4 text-blue-500" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {orgStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : orgStats?.pendingInvites ?? pendingInvites.length}
                 </div>
               </div>
-              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Today&apos;s Attendance</span><CalendarCheck className="h-4 w-4" /></div>
+              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Today&apos;s Attendance</span><CalendarCheck className="h-4 w-4 text-green-500" /></div>
                 <div className="text-2xl font-semibold tracking-tight">
                   {attendanceStatsLoading ? <span className="flex items-center gap-1 text-sm text-[color:var(--foreground)]/50"><Loader2 className="h-4 w-4 animate-spin" />...</span> : `${attendanceStats?.attendanceRate ?? 0}%`}
                 </div>
@@ -378,16 +380,20 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                   {attendanceStats ? `${attendanceStats.presentToday}/${attendanceStats.totalEmployees} present` : 'Loading...'}
                 </div>
               </div>
-              <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-4 flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs text-[color:var(--foreground)]/60"><span>Approvals</span><ShieldCheck className="h-4 w-4" /></div>
-                <div className="text-2xl font-semibold tracking-tight">0</div>
-              </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Approvals Placeholder */}
-              <div className="lg:col-span-2 rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-6">
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Pending Approvals</h3>
-                <p className="text-xs text-[color:var(--foreground)]/60">No approval workflows yet. This area will surface leave requests, expense claims, and other actionable items.</p>
+              {/* Company Performance Chart */}
+              <div className="lg:col-span-2">
+                <RevenueChart
+                  data={[
+                    { month: 'Jan', revenue: 45000 },
+                    { month: 'Feb', revenue: 52000 },
+                    { month: 'Mar', revenue: 48000 },
+                    { month: 'Apr', revenue: 61000 },
+                    { month: 'May', revenue: 58000 },
+                    { month: 'Jun', revenue: 67000 },
+                  ]}
+                />
               </div>
               {/* My Team */}
               <div className="rounded-lg border border-[color:var(--card-border)] bg-[color:var(--card-bg)] p-6">
@@ -407,6 +413,21 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
                   </ul>
                 )}
               </div>
+            </div>
+
+            {/* Weekly Attendance Chart */}
+            <div className="mt-6">
+              <AttendanceChart
+                data={[
+                  { day: 'Mon', present: 15, total: 20 },
+                  { day: 'Tue', present: 18, total: 20 },
+                  { day: 'Wed', present: 17, total: 20 },
+                  { day: 'Thu', present: 19, total: 20 },
+                  { day: 'Fri', present: 16, total: 20 },
+                  { day: 'Sat', present: 8, total: 20 },
+                  { day: 'Sun', present: 5, total: 20 },
+                ]}
+              />
             </div>
           </section>
         )}
@@ -456,7 +477,7 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
             <div className="flex items-center justify-between mb-4">
               <h2 id="modules-heading" className="text-lg font-semibold">Your Modules</h2>
               {privileged && (
-                <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 text-xs rounded-md border border-[color:var(--card-border)] px-3 py-1.5 hover:bg-[color:var(--card-bg)]/60 transition" aria-label="Invite a new user">
+                <button onClick={()=>setShowInvite(true)} className="inline-flex items-center gap-2 text-xs rounded-md bg-blue-500 text-white px-4 py-2 hover:bg-blue-600 transition shadow-sm" aria-label="Invite a new user">
                   <Plus className="h-4 w-4" /> Invite
                 </button>
               )}
@@ -472,22 +493,23 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
               {localModules.map(module => {
                 const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = { "layout-dashboard": LayoutDashboard, "calendar-check": CalendarCheck, users: Users, boxes: Boxes, "shield-check": ShieldCheck, "chart-line": ChartLine, clock: Clock };
                 const Icon = ICON_MAP[module.iconName] || LayoutDashboard;
+                
                 return (
-                  <div key={module.id} className="group bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-6 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-[color:var(--primary)]/40">
+                  <div key={module.id} className="group bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] hover:border-gray-300 dark:hover:border-gray-600 p-6 hover:shadow-md transition-all focus-within:ring-2 focus-within:ring-blue-500/40">
                     <div className="flex items-center justify-between mb-4">
-                      <Icon className="h-8 w-8 text-[color:var(--primary)]" />
-                      {module.status === "subscribed" && <CheckCircle className="h-5 w-5" style={{ color: 'var(--success)' }} aria-label="Subscribed" />}
+                      <Icon className="h-8 w-8 text-blue-500" />
+                      {module.status === "subscribed" && <CheckCircle className="h-5 w-5 text-green-500" aria-label="Subscribed" />}
                     </div>
                     <h3 className="text-lg font-semibold mb-2">{module.name}</h3>
                     <p className="text-sm mb-4 text-[color:var(--foreground)]/70">{module.description}</p>
                     <div className="flex gap-2">
                       {['subscribed','trial'].includes(module.status) && (
-                        <Button aria-label={`Open ${module.name} module`} className="flex-1 bg-[color:var(--primary)] hover:bg-[color:var(--primary-hover)] text-white" onClick={() => router.push(module.route)}>Open</Button>
+                        <Button aria-label={`Open ${module.name} module`} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push(module.route)}>Open</Button>
                       )}
                       {moduleManagers && module.status === 'available' && (
                         <>
                           <Button aria-label={`Preview ${module.name} module`} variant="outline" className="flex-1" onClick={() => router.push(module.route)}>Preview</Button>
-                          <Button aria-label={`Subscribe to ${module.name}`} disabled={pending === module.id} className="flex-1 text-white" style={{ backgroundColor: 'var(--success)' }} onClick={() => handleSubscribe(module)}>
+                          <Button aria-label={`Subscribe to ${module.name}`} disabled={pending === module.id} className="flex-1 bg-green-500 hover:bg-green-600 text-white" onClick={() => handleSubscribe(module)}>
                             {pending === module.id ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Subscribing</span> : 'Subscribe'}
                           </Button>
                         </>
@@ -528,8 +550,8 @@ export function DashboardContent({ user, profile, effectiveRole, modules }: Dash
           <div className="bg-[color:var(--card-bg)] rounded-lg shadow-sm border border-[color:var(--card-border)] p-6">
             <h2 id="account-settings" className="text-lg font-semibold mb-4 flex items-center gap-2"><Settings className="h-5 w-5" /> Account Settings</h2>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="outline" className="flex items-center gap-2" aria-label="Billing and Subscriptions"><CreditCard className="h-4 w-4" /> Billing & Subscriptions</Button>
-              <Button variant="outline" className="flex items-center gap-2" aria-label="Profile Settings"><Settings className="h-4 w-4" /> Profile Settings</Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => router.push('/settings')} aria-label="Settings"><Settings className="h-4 w-4" /> Settings</Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => router.push('/profile')} aria-label="Profile"><User className="h-4 w-4" /> Profile</Button>
             </div>
           </div>
         </section>
