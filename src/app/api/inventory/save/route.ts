@@ -81,15 +81,13 @@ export async function POST(request: NextRequest) {
       selling_price: item.unit_price * 1.2, // Add 20% markup as default
       supplier: data.supplier_name || null,
       is_active: true,
-      created_by: user.id,
     }));
 
     // Insert inventory items (upsert to handle duplicates)
     const { data: insertedItems, error: insertError } = await supabase
       .from("inventory")
       .upsert(inventoryItems, {
-        onConflict: "tenant_id,item_name",
-        ignoreDuplicates: false,
+        onConflict: "tenant_id, item_name",
       })
       .select();
 

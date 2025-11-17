@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 interface InvoiceItem {
   item_name: string;
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY not configured");
+    if (!process.env.GROQ_API_KEY) {
+      console.error("GROQ_API_KEY not configured");
       return NextResponse.json(
         { error: "AI service not configured" },
         { status: 500 }
@@ -40,18 +40,15 @@ export async function POST(request: NextRequest) {
     
     // Remove data URL prefix
     let base64Data: string;
-    let mimeType: string;
     
     if (isPDF) {
       base64Data = image.replace(/^data:application\/pdf;base64,/, "");
-      mimeType = "application/pdf";
     } else {
       base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-      mimeType = "image/jpeg";
     }
 
     // Prepare prompt for invoice extraction
-    const prompt = `Analyze this invoice ${isPDF ? 'PDF' : 'image'} and extract the following information in JSON format:
+    const prompt = `Analyze this invoice ${isPDF ? 'document' : 'image'} and extract the following information in JSON format:
     
 - invoice_id: The invoice or bill number (string)
 - supplier_name: The name of the supplier/vendor/seller (string)
@@ -67,56 +64,135 @@ export async function POST(request: NextRequest) {
 Extract all items listed in the invoice. If any field is not found, use null for strings and 0 for numbers.
 Return ONLY valid JSON, no markdown formatting or additional text.`;
 
-    // Prepare contents for Gemini
-    const contents = [
-      { text: prompt },
-      {
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data,
-        },
-      },
-    ];
+    let extractedText = "";
 
-    // Call Gemini API
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: contents,
-    });
+    if (isPDF) {
+      // Handle PDF using pdfjs-dist legacy build for Node.js
+      try {
+        // Convert base64 to buffer
+        const pdfBuffer = Buffer.from(base64Data, 'base64');
+        
+        // Use the legacy build of pdfjs-dist for Node.js
+        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        
+        // Extract text from PDF
+        const data = new Uint8Array(pdfBuffer);
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map((item: any) => item.str).join(' ') + '\n';
+        }
+        
+        extractedText = text;
+      } catch (pdfError) {
+        console.error("PDF processing error:", pdfError);
+        return NextResponse.json(
+          { error: "Failed to process PDF", details: pdfError instanceof Error ? pdfError.message : "Unknown error" },
+          { status: 500 }
+        );
+      }
 
-    const text = response.text || "";
+      // Use Groq to analyze the extracted text
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: `${prompt}\n\nExtracted text from invoice:\n${extractedText}`,
+          },
+        ],
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      });
 
-    // Parse JSON response
-    let extractedData: ExtractedInvoiceData;
-    try {
-      const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      extractedData = JSON.parse(cleanedText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini response:", text);
-      return NextResponse.json(
-        { error: "Failed to parse invoice data", details: text },
-        { status: 500 }
-      );
+      const text = chatCompletion.choices[0]?.message?.content || "";
+
+      // Parse JSON response
+      let extractedData: ExtractedInvoiceData;
+      try {
+        const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        extractedData = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error("Failed to parse Groq response:", text);
+        return NextResponse.json(
+          { error: "Failed to parse invoice data", details: text },
+          { status: 500 }
+        );
+      }
+
+      // Validate and clean data
+      if (!extractedData.items || !Array.isArray(extractedData.items)) {
+        extractedData.items = [];
+      }
+
+      // Ensure items have required fields
+      extractedData.items = extractedData.items.map((item) => ({
+        item_name: item.item_name || "Unknown Item",
+        quantity: Number(item.quantity) || 0,
+        unit_price: Number(item.unit_price) || 0,
+        total_price: Number(item.total_price) || 0,
+        unit_of_measure: item.unit_of_measure || "units",
+      }));
+
+      return NextResponse.json({
+        success: true,
+        data: extractedData,
+      });
+    } else {
+      // Handle image using Groq vision
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Data}`,
+                },
+              },
+            ],
+          },
+        ],
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      });
+
+      const text = chatCompletion.choices[0]?.message?.content || "";
+
+      // Parse JSON response
+      let extractedData: ExtractedInvoiceData;
+      try {
+        const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        extractedData = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error("Failed to parse Groq response:", text);
+        return NextResponse.json(
+          { error: "Failed to parse invoice data", details: text },
+          { status: 500 }
+        );
+      }
+
+      // Validate and clean data
+      if (!extractedData.items || !Array.isArray(extractedData.items)) {
+        extractedData.items = [];
+      }
+
+      // Ensure items have required fields
+      extractedData.items = extractedData.items.map((item) => ({
+        item_name: item.item_name || "Unknown Item",
+        quantity: Number(item.quantity) || 0,
+        unit_price: Number(item.unit_price) || 0,
+        total_price: Number(item.total_price) || 0,
+        unit_of_measure: item.unit_of_measure || "units",
+      }));
+
+      return NextResponse.json({
+        success: true,
+        data: extractedData,
+      });
     }
-
-    // Validate and clean data
-    if (!extractedData.items || !Array.isArray(extractedData.items)) {
-      extractedData.items = [];
-    }
-
-    // Ensure items have required fields
-    extractedData.items = extractedData.items.map((item) => ({
-      item_name: item.item_name || "Unknown Item",
-      quantity: Number(item.quantity) || 0,
-      unit_price: Number(item.unit_price) || 0,
-      total_price: Number(item.total_price) || 0,
-      unit_of_measure: item.unit_of_measure || "units",
-    }));
-
-    return NextResponse.json({
-      success: true,
-      data: extractedData,
-    });
   } catch (error) {
     console.error("Invoice processing error:", error);
     return NextResponse.json(
