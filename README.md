@@ -5,14 +5,20 @@ This is a mobile-first ERP & CRM solution built with Next.js, inspired by Odoo. 
 ## Features
 
 - **Mobile-First Design**: Optimized for mobile devices with responsive layouts
-- **Modular Architecture**: Separate modules for different business functions
-- **Modern UI**: Built with shadcn/ui and Aceternity UI components
-- **Authentication**: Secure login system with social authentication options
+- **Modular Architecture**: Enable/disable modules per tenant (Odoo-inspired)
+- **Modern UI**: Built with shadcn/ui, Aceternity UI, and Tailwind CSS
+- **Authentication**: Secure login system (Supabase) with social auth
 - **Business Modules**:
-  - Manager Module: Business management dashboard with analytics
-  - Store Module: Inventory management and sales tracking
-  - Attendance Module: Employee time tracking and leave management
-  - HR Module: Human resources management and payroll
+   - **Manager Dashboard**: Business analytics, module navigation, and quick actions
+   - **Store/Inventory**: Inventory management, invoice scanning (AI-powered), and sales tracking
+   - **Attendance**: Face recognition attendance (FACEIO), time tracking, leave management
+   - **HR**: Employee management, task assignment, payroll basics
+   - **Tasks**: Assign and track tasks for employees (role-based access)
+   - **Analytics**: Real-time analytics, eye-tracking (WebGazer), and Clarity heatmaps
+- **AI Integrations**: Invoice OCR (Groq, Gemini), face recognition, and analytics
+- **User Experience Analytics**: Microsoft Clarity (session replays, heatmaps), WebGazer (eye-tracking)
+- **Dark Mode**: Full dark/light theme support
+- **Accessibility**: ARIA labels, keyboard navigation, touch-friendly
 
 ## Tech Stack
 
@@ -54,21 +60,20 @@ src/
 └── lib/                   # Utility functions
 ```
 
-## Current Status
 
-This is the initial setup with:
+## Latest Modules & Highlights
+
 - ✅ Landing page with hero section and module cards
 - ✅ Login page with authentication form
-- ✅ Placeholder pages for all modules
-- ✅ Mobile-responsive design
-- ✅ Modern UI components
-- 🚧 Module implementations (coming soon)
-- ❌ NO - Subscription/Billing Module NOT Implemented:
+- ✅ Inventory: AI-powered invoice scanning, upsert to inventory
+- ✅ Attendance: Face recognition (FACEIO), punch in/out, RLS-secured
+- ✅ HR: Employee management, task assignment, role-based access
+- ✅ Tasks: Assign, track, and complete tasks (admin/manager/employee)
+- ✅ Analytics: Eye-tracking (WebGazer), Clarity heatmaps, real-time charts
+- ✅ Mobile-responsive, dark mode, and accessible UI
+- 🚧 Subscription/Billing Module: Placeholder only (no payment integration yet)
 
-There's a "Billing & Subscriptions" button in the dashboard (line 472) but it's just a placeholder
-No actual subscription management, payment processing, or billing features exist
-No pricing tiers, upgrade/downgrade functionality, or payment integration
-The button doesn't do anything when clicked
+> Note: All modules are gated by tenant subscription. RLS policies secure all data access.
 
 
 ## Development
